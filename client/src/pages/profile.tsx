@@ -28,6 +28,8 @@ export default function Profile() {
     <div className="container mx-auto px-4 py-6">
       <h1 className="text-3xl font-bold text-center mb-8">Settings</h1>
       
+      <ProfileHeader />
+      
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid grid-cols-5 w-full max-w-2xl mx-auto mb-8">
           <TabsTrigger value="account">Account</TabsTrigger>
