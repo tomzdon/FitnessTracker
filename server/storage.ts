@@ -3,6 +3,7 @@ import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
+import createMemoryStore from "memorystore";
 
 export interface IStorage {
   // User methods
@@ -229,16 +230,14 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
   
   constructor() {
-    // Set up PostgreSQL session store
-    const PostgresStore = connectPg(session);
-    
-    this.sessionStore = new PostgresStore({
-      conObject: {
-        connectionString: process.env.DATABASE_URL!,
-        ssl: { rejectUnauthorized: false } // Required for Supabase connection
-      },
-      createTableIfMissing: true
+    // Initialize with a memory store only
+    // This avoids async/await issues with initialization
+    const MemoryStore = createMemoryStore(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
     });
+    
+    console.log("Using memory session store for now");
   }
 
   // User methods
@@ -390,4 +389,8 @@ export class DatabaseStorage implements IStorage {
 }
 
 // Use database storage
-export const storage = new DatabaseStorage();
+// Create and initialize the database storage
+const dbStorage = new DatabaseStorage();
+
+// Export the storage
+export const storage = dbStorage;
