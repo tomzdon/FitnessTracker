@@ -26,7 +26,7 @@ const EmptyWorkoutHistory = () => {
         </p>
         
         <a 
-          href="/discover"
+          href="/"
           className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800"
         >
           <Dumbbell className="w-5 h-5 mr-2" />
