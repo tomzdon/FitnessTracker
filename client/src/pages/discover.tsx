@@ -1,11 +1,162 @@
-import StatisticsSection from "@/components/dashboard/StatisticsSection";
-import FavouriteWorkoutsSection from "@/components/dashboard/FavouriteWorkoutsSection";
+import { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
+
+// Content categories
+const categories = [
+  { id: 'all', name: 'All' },
+  { id: 'programs', name: 'Programs' },
+  { id: 'series', name: 'Series' },
+  { id: 'workouts', name: 'Workouts' },
+  { id: 'progress-tests', name: 'Progress Tests' },
+  { id: 'form-library', name: 'Form Library' },
+  { id: 'meal-ideas', name: 'Meal Ideas' },
+  { id: 'knowledge', name: 'Knowledge' },
+];
+
+// Mock workout data
+const workouts = [
+  {
+    id: 1,
+    type: 'program',
+    day: 22,
+    totalDays: 50,
+    title: 'MAX program day 22',
+    subtitle: "LET'S NOT MAKE THESE ISOLATION EXERCISES A COMPOUND",
+    duration: 38, // in minutes
+    backgroundImage: 'https://source.unsplash.com/random/600x800/?fitness-woman-1'
+  },
+  {
+    id: 2,
+    type: 'program',
+    day: 21,
+    totalDays: 50,
+    title: 'MAX program day 21',
+    subtitle: 'ONE ISOLATION AMID THE COMPOUNDS!',
+    duration: 37, // in minutes
+    backgroundImage: 'https://source.unsplash.com/random/600x800/?fitness-woman-2'
+  },
+  {
+    id: 3,
+    type: 'knowledge',
+    title: 'MAX HQ - Week 5',
+    date: 'MAY 03, 2025',
+    backgroundImage: 'https://source.unsplash.com/random/600x800/?fitness-collage'
+  }
+];
 
 export default function Discover() {
+  const [activeCategory, setActiveCategory] = useState('all');
+
   return (
     <div className="container mx-auto px-4 py-6">
-      <StatisticsSection />
-      <FavouriteWorkoutsSection />
+      {/* Search bar */}
+      <div className="relative mb-6">
+        <div className="flex items-center border border-gray-200 rounded-lg w-full">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <input 
+            type="text" 
+            placeholder="Search" 
+            className="pl-10 pr-12 py-3 w-full border-0 focus:ring-0 focus:outline-none rounded-lg"
+          />
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+            <button className="p-1 focus:outline-none focus:ring-2 focus:ring-black rounded-md">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Categories */}
+      <div className="overflow-x-auto pb-2 mb-6">
+        <div className="flex space-x-4 min-w-max">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              className={`px-4 py-2 whitespace-nowrap ${
+                activeCategory === category.id
+                  ? 'text-black border-b-2 border-black font-medium'
+                  : 'text-gray-500 hover:text-gray-900'
+              }`}
+              onClick={() => setActiveCategory(category.id)}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Newest content section */}
+      <div className="mb-10">
+        <h2 className="text-xl font-semibold mb-5">Newest content</h2>
+        
+        <div className="relative">
+          {/* Carousel/Content cards */}
+          <div className="flex overflow-x-auto pb-4 space-x-4 -mx-1 px-1 hide-scrollbar">
+            {workouts.map((workout) => (
+              <div 
+                key={workout.id} 
+                className="flex-shrink-0 w-[280px] md:w-[320px] rounded-lg overflow-hidden relative"
+              >
+                <div 
+                  className="aspect-[3/4] relative group cursor-pointer"
+                  style={{
+                    backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6)), url(${workout.backgroundImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }}
+                >
+                  {/* Top badge */}
+                  <div className="absolute top-4 left-4 right-4 flex justify-between">
+                    <div className="bg-white text-black text-xs font-bold px-2 py-1 rounded-full">
+                      {workout.type === 'knowledge' ? 'KNOWLEDGE' : `DAY ${workout.day}/${workout.totalDays}`}
+                    </div>
+                    
+                    <button className="bg-white bg-opacity-20 rounded-full p-1 text-white">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  {/* Bottom content */}
+                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                    <h3 className="text-xl font-bold mb-1">{workout.title}</h3>
+                    {workout.subtitle && (
+                      <p className="text-xs text-gray-200 uppercase tracking-wider mb-2">
+                        {workout.subtitle}
+                      </p>
+                    )}
+                    {workout.date && (
+                      <p className="text-xs text-gray-200 mb-2">
+                        {workout.date}
+                      </p>
+                    )}
+                    {workout.duration && (
+                      <div className="flex items-center mt-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                        </svg>
+                        <span className="text-sm">{workout.duration} MIN</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            {/* Next button */}
+            <button className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white rounded-full shadow-lg p-3 focus:outline-none">
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
