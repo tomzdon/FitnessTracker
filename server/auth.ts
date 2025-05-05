@@ -35,8 +35,12 @@ async function comparePasswords(supplied: string, stored: string) {
 
 export function setupAuth(app: Express) {
   // Session configuration
+  if (!process.env.SESSION_SECRET) {
+    console.warn("SESSION_SECRET is not set. Using a default secret. This is insecure for production.");
+  }
+  
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || 'cgx-session-secret', // Use env variable in production
+    secret: process.env.SESSION_SECRET || 'cgx_app_session_secret',
     resave: false,
     saveUninitialized: false,
     cookie: { 

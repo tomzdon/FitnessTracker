@@ -2,20 +2,16 @@ import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
 
-// Check if the Supabase password is set
-if (!process.env.SUPABASE_PASSWORD) {
+// Check if the database URL is set
+if (!process.env.DATABASE_URL) {
   throw new Error(
-    "SUPABASE_PASSWORD must be set. Make sure to set the Supabase database password.",
+    "DATABASE_URL must be set. Did you forget to provision a database?",
   );
 }
 
-// Create the connection string with environment variables
-const connectionString = `postgresql://postgres.xccojfhjqmdcvfqussij:${process.env.SUPABASE_PASSWORD}@aws-0-eu-central-1.pooler.supabase.com:5432/postgres`;
-
 // Create a connection pool
 export const pool = new Pool({
-  connectionString,
-  ssl: { rejectUnauthorized: false } // Required for Supabase connection
+  connectionString: process.env.DATABASE_URL
 });
 
 // Create a Drizzle instance
