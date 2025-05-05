@@ -10,6 +10,7 @@ import Calendar from "@/pages/calendar";
 import Favorites from "@/pages/favorites";
 import Profile from "@/pages/profile";
 import LoginPage from "@/pages/login";
+import RegisterPage from "@/pages/register";
 import Header from "@/components/layout/Header";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import { BackToTop } from "@/components/ui/back-to-top";
@@ -23,6 +24,7 @@ function AppRoutes() {
       <Route path="/favorites" component={Favorites} />
       <Route path="/profile" component={Profile} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/register" component={RegisterPage} />
       <Route component={NotFound} />
     </Switch>
   );

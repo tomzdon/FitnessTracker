@@ -1,0 +1,60 @@
+<summary_title>
+Personal Information Collection Form - User Registration Step 2
+</summary_title>
+
+<image_analysis>
+1. Content Structure:
+- Main Content Elements: Form fields for personal information, progress indicator, help text
+- Content Grouping: Form fields grouped under "Personal info" heading
+- Visual Hierarchy: Clear heading, form fields, explanatory text, and CTA button
+- Content Types: Text inputs, dropdown select, help text, button
+- Text Elements: Page title, form labels, help text explanation, continue button
+
+2. Layout Structure:
+- Content Distribution: Split layout with decorative image left, form content right
+- Spacing Patterns: Consistent spacing between form fields and sections
+- Container Structure: White container for form content
+- Grid/Alignment: Single column form layout with left-aligned labels
+- Responsive Behavior: Form should stack vertically on mobile devices
+
+3. UI Components (Page-Specific):
+- Content Cards/Containers: Form container with white background
+- Interactive Elements: Text input fields, dropdown select, continue button
+- Data Display Elements: Progress indicator showing "Step 2 of 3"
+- Status Indicators: Back arrow navigation
+- Media Components: Decorative lifestyle image on left panel
+
+4. Interactive Patterns:
+- Content Interactions: Form field focus states, dropdown selection
+- State Changes: Button hover/active states, field focus states
+- Dynamic Content: Form validation feedback
+- Mobile Interactions: Touch-friendly input fields and dropdown
+</image_analysis>
+
+<development_planning>
+1. Component Structure:
+- PersonalInfoForm component
+- FormField components for inputs
+- ProgressIndicator component
+- HelpText component
+- Props for form data and submission handling
+- Form validation state management
+
+2. Content Layout:
+- Flexbox/Grid for split layout
+- Stack layout for form fields
+- Responsive breakpoints for mobile
+- Consistent spacing system
+
+3. Integration Points:
+- Form validation system
+- Progress tracking state
+- Navigation handling
+- Theme tokens for styling
+
+4. Performance Considerations:
+- Lazy loading for background image
+- Form field validation optimization
+- Minimal re-renders for form state
+- Accessible form implementation
+</development_planning>
