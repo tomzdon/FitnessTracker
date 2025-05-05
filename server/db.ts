@@ -10,7 +10,7 @@ if (!process.env.SUPABASE_PASSWORD) {
 }
 
 // Create the connection string with environment variables
-const connectionString = `postgresql://postgres:${process.env.SUPABASE_PASSWORD}@db.xccojfhjqmdcvfqussij.supabase.co:5432/postgres`;
+const connectionString = `postgresql://postgres.xccojfhjqmdcvfqussij:${process.env.SUPABASE_PASSWORD}@aws-0-eu-central-1.pooler.supabase.com:5432/postgres`;
 
 // Create a connection pool
 export const pool = new Pool({
