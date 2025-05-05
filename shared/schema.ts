@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, varchar, json } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -159,3 +159,10 @@ export const progressTestsRelations = relations(progressTests, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// Session - managed by connect-pg-simple
+export const session = pgTable("session", {
+  sid: varchar("sid").primaryKey().notNull(),
+  sess: json("sess").notNull(),
+  expire: timestamp("expire").notNull(),
+});
