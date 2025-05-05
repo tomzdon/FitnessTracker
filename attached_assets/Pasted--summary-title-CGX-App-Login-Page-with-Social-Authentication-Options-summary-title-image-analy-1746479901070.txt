@@ -1,0 +1,61 @@
+<summary_title>
+CGX App Login Page with Social Authentication Options
+</summary_title>
+
+<image_analysis>
+1. Content Structure:
+- Main Content Elements: Login form, social login buttons, informational banner
+- Content Grouping: Two main sections - traditional login and social login options
+- Visual Hierarchy: Login form at top, social options below, separated by "OR" divider
+- Content Types: Form inputs, buttons, text, icons, info banner
+- Text Elements: "Log in" header, email/password labels, info message, button text
+
+2. Layout Structure:
+- Content Distribution: Right-aligned single column layout
+- Spacing Patterns: Consistent padding between elements, clear section separation
+- Container Structure: Card-like form container with white background
+- Grid/Alignment: Single column, center-aligned components
+- Responsive Behavior: Form maintains fixed width with responsive margins
+
+3. UI Components (Page-Specific):
+- Content Cards/Containers: Info banner, form inputs, button containers
+- Interactive Elements: Email input, password input with visibility toggle, login buttons
+- Data Display Elements: Form validation states (implied)
+- Status Indicators: Password visibility toggle
+- Media Components: Social provider icons, back arrow
+
+4. Interactive Patterns:
+- Content Interactions: Form submission, password visibility toggle, social login options
+- State Changes: Button hover states, input focus states
+- Dynamic Content: Form validation feedback
+- Mobile Interactions: Touch-friendly input fields and buttons
+</image_analysis>
+
+<development_planning>
+1. Component Structure:
+- LoginForm component with email/password inputs
+- SocialLogin component for Apple/Google buttons
+- InfoBanner component for app user message
+- BackButton component for navigation
+- Form validation handlers and interfaces
+
+2. Content Layout:
+- Flexbox column layout for main container
+- Fixed width form container (max-width)
+- Consistent spacing system
+- Responsive margins for different screen sizes
+
+3. Integration Points:
+- Authentication service integration
+- Social auth providers setup
+- Form validation library integration
+- Global style tokens for colors/typography
+- Shared button/input components
+
+4. Performance Considerations:
+- Lazy loading social auth SDKs
+- Form validation optimization
+- Error state handling
+- Input debouncing
+- Accessibility compliance for form elements
+</development_planning>
