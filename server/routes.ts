@@ -4,53 +4,77 @@ import { storage } from "./storage";
 import { insertFavoriteSchema, insertWorkoutSchema } from "@shared/schema";
 import { setupAuth } from "./auth";
 
+// Middleware to check if user is authenticated
+function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  return res.status(401).json({ message: 'Unauthorized' });
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up authentication
+  setupAuth(app);
+  
   // API routes
   const apiRouter = express.Router();
   
   // Get statistics
-  apiRouter.get('/statistics', async (req: Request, res: Response) => {
+  apiRouter.get('/statistics', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const statistics = await storage.getStatistics(1); // Hardcoded user ID for now
+      const userId = req.user!.id;
+      console.log('Getting statistics for user:', userId);
+      const statistics = await storage.getStatistics(userId);
       res.json(statistics);
     } catch (error) {
+      console.error('Error getting statistics:', error);
       res.status(500).json({ message: 'Failed to fetch statistics' });
     }
   });
 
   // Get favorites
-  apiRouter.get('/favourites', async (req: Request, res: Response) => {
+  apiRouter.get('/favourites', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const favorites = await storage.getFavorites(1); // Hardcoded user ID for now
+      const userId = req.user!.id;
+      console.log('Getting favorites for user:', userId);
+      const favorites = await storage.getFavorites(userId);
       res.json(favorites);
     } catch (error) {
+      console.error('Error getting favorites:', error);
       res.status(500).json({ message: 'Failed to fetch favorites' });
     }
   });
 
   // Add favorite
-  apiRouter.post('/favourites', async (req: Request, res: Response) => {
+  apiRouter.post('/favourites', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const validatedData = insertFavoriteSchema.parse(req.body);
+      const userId = req.user!.id;
+      const data = {
+        ...req.body,
+        userId
+      };
+      const validatedData = insertFavoriteSchema.parse(data);
       const favorite = await storage.addFavorite(validatedData);
       res.status(201).json(favorite);
     } catch (error) {
+      console.error('Error adding favorite:', error);
       res.status(400).json({ message: 'Invalid request data' });
     }
   });
 
   // Remove favorite
-  apiRouter.delete('/favourites/:id', async (req: Request, res: Response) => {
+  apiRouter.delete('/favourites/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       await storage.removeFavorite(id);
       res.status(204).end();
     } catch (error) {
+      console.error('Error removing favorite:', error);
       res.status(500).json({ message: 'Failed to remove favorite' });
     }
   });
 
-  // Get workouts
+  // Get workouts (no auth required - public endpoint)
   apiRouter.get('/workouts', async (req: Request, res: Response) => {
     try {
       // If date is provided as a query parameter, filter workouts for that date
@@ -69,27 +93,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(workouts);
       }
     } catch (error) {
+      console.error('Error getting workouts:', error);
       res.status(500).json({ message: 'Failed to fetch workouts' });
     }
   });
   
   // Get completed workouts
-  apiRouter.get('/completedWorkouts', async (req: Request, res: Response) => {
+  apiRouter.get('/completedWorkouts', isAuthenticated, async (req: Request, res: Response) => {
     try {
-      const completedWorkouts = await storage.getCompletedWorkouts(1); // Hardcoded user ID for now
+      const userId = req.user!.id;
+      console.log('Getting completed workouts for user:', userId);
+      const completedWorkouts = await storage.getCompletedWorkouts(userId);
       res.json(completedWorkouts);
     } catch (error) {
+      console.error('Error getting completed workouts:', error);
       res.status(500).json({ message: 'Failed to fetch completed workouts' });
     }
   });
+  
+  // Add completed workout
+  apiRouter.post('/completedWorkouts', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const completedWorkout = await storage.addCompletedWorkout({
+        userId,
+        workoutId: req.body.workoutId
+      });
+      res.status(201).json(completedWorkout);
+    } catch (error) {
+      console.error('Error adding completed workout:', error);
+      res.status(400).json({ message: 'Invalid request data' });
+    }
+  });
 
-  // Add workout
+  // Add workout (admin endpoint in real application)
   apiRouter.post('/workouts', async (req: Request, res: Response) => {
     try {
       const validatedData = insertWorkoutSchema.parse(req.body);
       const workout = await storage.addWorkout(validatedData);
       res.status(201).json(workout);
     } catch (error) {
+      console.error('Error adding workout:', error);
+      res.status(400).json({ message: 'Invalid request data' });
+    }
+  });
+  
+  // Progress tests endpoints
+  apiRouter.get('/progressTests', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const progressTests = await storage.getProgressTests(userId);
+      res.json(progressTests);
+    } catch (error) {
+      console.error('Error getting progress tests:', error);
+      res.status(500).json({ message: 'Failed to fetch progress tests' });
+    }
+  });
+  
+  apiRouter.post('/progressTests', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const progressTest = await storage.addProgressTest({
+        ...req.body,
+        userId
+      });
+      res.status(201).json(progressTest);
+    } catch (error) {
+      console.error('Error adding progress test:', error);
       res.status(400).json({ message: 'Invalid request data' });
     }
   });

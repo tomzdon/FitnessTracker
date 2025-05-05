@@ -100,7 +100,20 @@ export class MemStorage implements IStorage {
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.userIdCounter++;
-    const user: User = { ...insertUser, id };
+    const user: User = { 
+      ...insertUser, 
+      id,
+      email: insertUser.email || null,
+      firstName: insertUser.firstName || null,
+      lastName: insertUser.lastName || null,
+      gender: insertUser.gender || null,
+      age: insertUser.age || null,
+      fitnessLevel: insertUser.fitnessLevel || null,
+      fitnessGoals: insertUser.fitnessGoals || null,
+      preferredWorkoutDays: insertUser.preferredWorkoutDays || null,
+      workoutReminders: insertUser.workoutReminders || false,
+      createdAt: new Date()
+    };
     this.users.set(id, user);
     return user;
   }
@@ -119,6 +132,12 @@ export class MemStorage implements IStorage {
     const workout: Workout = {
       ...insertWorkout,
       id,
+      date: insertWorkout.date || null,
+      description: insertWorkout.description || null,
+      imageUrl: insertWorkout.imageUrl || null,
+      day: insertWorkout.day || null,
+      totalDays: insertWorkout.totalDays || null,
+      subtitle: insertWorkout.subtitle || null,
       createdAt: new Date()
     };
     this.workouts.set(id, workout);
@@ -178,6 +197,10 @@ export class MemStorage implements IStorage {
     const progressTest: ProgressTest = {
       ...insertProgressTest,
       id,
+      title: insertProgressTest.title,
+      description: insertProgressTest.description || null,
+      result: insertProgressTest.result || null,
+      userId: insertProgressTest.userId,
       completedAt: new Date()
     };
     this.progressTests.set(id, progressTest);
