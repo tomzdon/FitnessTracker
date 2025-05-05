@@ -1,4 +1,8 @@
-import { type User, type InsertUser, type Workout, type InsertWorkout, type Favorite, type InsertFavorite, type CompletedWorkout, type InsertCompletedWorkout, type ProgressTest, type InsertProgressTest, type Statistics } from "@shared/schema";
+import { type User, type InsertUser, type Workout, type InsertWorkout, type Favorite, type InsertFavorite, type CompletedWorkout, type InsertCompletedWorkout, type ProgressTest, type InsertProgressTest, type Statistics, users, workouts, favorites, completedWorkouts, progressTests } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc, sql } from "drizzle-orm";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
 
 export interface IStorage {
   // User methods
@@ -26,6 +30,9 @@ export interface IStorage {
   
   // Statistics
   getStatistics(userId: number): Promise<Statistics>;
+  
+  // Session store
+  sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
@@ -34,6 +41,8 @@ export class MemStorage implements IStorage {
   private favorites: Map<number, Favorite>;
   private completedWorkouts: Map<number, CompletedWorkout>;
   private progressTests: Map<number, ProgressTest>;
+  
+  public sessionStore: session.Store;
   
   private userIdCounter: number;
   private workoutIdCounter: number;
@@ -54,11 +63,27 @@ export class MemStorage implements IStorage {
     this.completedWorkoutIdCounter = 1;
     this.progressTestIdCounter = 1;
     
+    // Create in-memory session store
+    const MemoryStore = require('memorystore')(session);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    });
+    
     // Add default user
     this.users.set(1, {
       id: 1,
       username: 'tomasz',
-      password: 'password123'
+      password: 'password123',
+      email: null,
+      firstName: null,
+      lastName: null,
+      gender: null,
+      age: null,
+      fitnessLevel: null,
+      fitnessGoals: null,
+      preferredWorkoutDays: null,
+      workoutReminders: true,
+      createdAt: new Date()
     });
   }
 
@@ -176,4 +201,168 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+  
+  constructor() {
+    // Set up PostgreSQL session store
+    const PostgresStore = connectPg(session);
+    this.sessionStore = new PostgresStore({
+      conObject: {
+        connectionString: process.env.DATABASE_URL!,
+      },
+      createTableIfMissing: true
+    });
+  }
+
+  // User methods
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...insertUser,
+        createdAt: new Date()
+      })
+      .returning();
+    return user;
+  }
+
+  // Workout methods
+  async getWorkouts(): Promise<Workout[]> {
+    return db.select().from(workouts).orderBy(desc(workouts.createdAt));
+  }
+
+  async getWorkout(id: number): Promise<Workout | undefined> {
+    const [workout] = await db.select().from(workouts).where(eq(workouts.id, id));
+    return workout;
+  }
+
+  async addWorkout(insertWorkout: InsertWorkout): Promise<Workout> {
+    const [workout] = await db
+      .insert(workouts)
+      .values({
+        ...insertWorkout,
+        date: insertWorkout.date || null,
+        description: insertWorkout.description || null,
+        imageUrl: insertWorkout.imageUrl || null,
+        day: insertWorkout.day || null,
+        totalDays: insertWorkout.totalDays || null,
+        subtitle: insertWorkout.subtitle || null,
+        createdAt: new Date()
+      })
+      .returning();
+    return workout;
+  }
+
+  // Favorite methods
+  async getFavorites(userId: number): Promise<Workout[]> {
+    // Join favorites with workouts to get workout details
+    const result = await db
+      .select({
+        workout: workouts
+      })
+      .from(favorites)
+      .innerJoin(workouts, eq(favorites.workoutId, workouts.id))
+      .where(eq(favorites.userId, userId));
+    
+    return result.map(r => r.workout);
+  }
+
+  async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
+    const [favorite] = await db
+      .insert(favorites)
+      .values({
+        userId: insertFavorite.userId,
+        workoutId: insertFavorite.workoutId,
+        createdAt: new Date()
+      })
+      .returning();
+    return favorite;
+  }
+
+  async removeFavorite(id: number): Promise<void> {
+    await db.delete(favorites).where(eq(favorites.id, id));
+  }
+
+  // Completed Workout methods
+  async getCompletedWorkouts(userId: number): Promise<CompletedWorkout[]> {
+    return db
+      .select()
+      .from(completedWorkouts)
+      .where(eq(completedWorkouts.userId, userId))
+      .orderBy(desc(completedWorkouts.completedAt));
+  }
+
+  async addCompletedWorkout(insertCompletedWorkout: InsertCompletedWorkout): Promise<CompletedWorkout> {
+    const [completedWorkout] = await db
+      .insert(completedWorkouts)
+      .values({
+        userId: insertCompletedWorkout.userId,
+        workoutId: insertCompletedWorkout.workoutId,
+        completedAt: new Date()
+      })
+      .returning();
+    return completedWorkout;
+  }
+
+  // Progress Test methods
+  async getProgressTests(userId: number): Promise<ProgressTest[]> {
+    return db
+      .select()
+      .from(progressTests)
+      .where(eq(progressTests.userId, userId))
+      .orderBy(desc(progressTests.completedAt));
+  }
+
+  async addProgressTest(insertProgressTest: InsertProgressTest): Promise<ProgressTest> {
+    const [progressTest] = await db
+      .insert(progressTests)
+      .values({
+        ...insertProgressTest,
+        description: insertProgressTest.description || null,
+        result: insertProgressTest.result || null,
+        completedAt: new Date()
+      })
+      .returning();
+    return progressTest;
+  }
+
+  // Statistics
+  async getStatistics(userId: number): Promise<Statistics> {
+    // Count completed workouts
+    const [workoutsResult] = await db
+      .select({ count: sql`count(*)` })
+      .from(completedWorkouts)
+      .where(eq(completedWorkouts.userId, userId));
+    
+    // Count progress tests
+    const [testsResult] = await db
+      .select({ count: sql`count(*)` })
+      .from(progressTests)
+      .where(eq(progressTests.userId, userId));
+    
+    // Calculate streak - this would be more complex in real world
+    // Here we're just calculating consecutive days with workouts
+    const streak = 0;
+    
+    return {
+      workouts: Number(workoutsResult.count) || 0,
+      streak,
+      progressTests: Number(testsResult.count) || 0
+    };
+  }
+}
+
+// Use database storage
+export const storage = new DatabaseStorage();
