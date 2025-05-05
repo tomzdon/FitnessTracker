@@ -11,8 +11,8 @@ if (!databaseUrl) {
   );
 }
 
-// Supabase requires SSL but we need to remove the trailing quote if present
-const connectionString = databaseUrl.replace(/["']+$/, '');
+// Supabase requires SSL but we need to remove any quote characters
+const connectionString = databaseUrl.replace(/^["']|["']$/g, '');
 
 console.log("Connecting to database with connection string:", 
             connectionString.replace(/postgres.*:(.*)@/, 'postgres***:***@'));
