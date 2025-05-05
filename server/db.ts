@@ -9,9 +9,10 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create a connection pool
+// Create a connection pool with SSL enabled for Supabase
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false } // Required for Supabase connection
 });
 
 // Create a Drizzle instance
