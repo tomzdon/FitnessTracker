@@ -71,6 +71,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: 'Failed to fetch workouts' });
     }
   });
+  
+  // Get completed workouts
+  apiRouter.get('/completedWorkouts', async (req: Request, res: Response) => {
+    try {
+      const completedWorkouts = await storage.getCompletedWorkouts(1); // Hardcoded user ID for now
+      res.json(completedWorkouts);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch completed workouts' });
+    }
+  });
 
   // Add workout
   apiRouter.post('/workouts', async (req: Request, res: Response) => {

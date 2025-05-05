@@ -1,5 +1,4 @@
 import { Dumbbell } from "lucide-react";
-import { Link } from "wouter";
 
 const EmptyWorkoutHistory = () => {
   return (
@@ -26,12 +25,13 @@ const EmptyWorkoutHistory = () => {
           Complete your first workout to start tracking your progress
         </p>
         
-        <Link href="/discover">
-          <a className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800">
-            <Dumbbell className="w-5 h-5 mr-2" />
-            Explore workouts
-          </a>
-        </Link>
+        <a 
+          href="/discover"
+          className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-gray-900 hover:bg-gray-800"
+        >
+          <Dumbbell className="w-5 h-5 mr-2" />
+          Explore workouts
+        </a>
       </div>
     </div>
   );
