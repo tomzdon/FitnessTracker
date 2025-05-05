@@ -1,0 +1,60 @@
+<summary_title>
+Workout Dashboard - Daily Overview and Statistics
+</summary_title>
+
+<image_analysis>
+1. Content Structure:
+- Main Content Elements: Hero image, daily workout status, statistics cards, favorites section
+- Content Grouping: Three main sections - daily status, statistics overview, favorites
+- Visual Hierarchy: Large hero image > Daily status > Statistics cards > Favorites section
+- Content Types: Images, text, statistics cards, interactive buttons, date selector
+- Text Elements: Greeting, headings ("Statistics", "Favourite workouts"), status messages, metrics
+
+2. Layout Structure:
+- Content Distribution: Single column layout with full-width sections
+- Spacing Patterns: Consistent padding between sections, card grid spacing
+- Container Structure: Rounded containers for stats cards, full-width hero image
+- Grid/Alignment: 3-column grid for statistics cards, centered content alignment
+- Responsive Behavior: Cards should stack on mobile, maintain padding ratios
+
+3. UI Components (Page-Specific):
+- Content Cards: Statistics cards with icons and metrics
+- Interactive Elements: "Assign new workout" button, date selector, "Add favourites" button
+- Data Display Elements: Workout counts, streak metrics, completion status
+- Status Indicators: Zero-state indicators for statistics
+- Media Components: Hero image container, icon elements
+
+4. Interactive Patterns:
+- Content Interactions: Date selection, workout assignment
+- State Changes: Button hover states, active date indication
+- Dynamic Content: Statistics updates, workout status changes
+- Mobile Interactions: Touch-friendly card layouts, swipeable date selector
+</image_analysis>
+
+<development_planning>
+1. Component Structure:
+- DashboardHeader (greeting, date selector)
+- WorkoutStatus (daily status, action button)
+- StatisticsGrid (statistics cards container)
+- StatCard (individual statistic display)
+- FavoritesSection (favorites container)
+- DateSelector (interactive calendar strip)
+
+2. Content Layout:
+- Flexbox for main content flow
+- CSS Grid for statistics cards
+- Responsive breakpoints for mobile adaptation
+- Consistent spacing system using CSS variables
+
+3. Integration Points:
+- Global theme variables for colors/typography
+- Shared components for buttons and cards
+- Common layout containers
+- Icon system integration
+
+4. Performance Considerations:
+- Lazy loading for hero image
+- Progressive loading for statistics data
+- Optimized card rendering
+- Efficient state updates for dynamic content
+</development_planning>
