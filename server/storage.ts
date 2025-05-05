@@ -233,8 +233,7 @@ export class DatabaseStorage implements IStorage {
     const PostgresStore = connectPg(session);
     this.sessionStore = new PostgresStore({
       conObject: {
-        connectionString: process.env.SUPABASE_DATABASE_URL!,
-        ssl: { rejectUnauthorized: false } // Required for Supabase connection
+        connectionString: process.env.DATABASE_URL!
       },
       createTableIfMissing: true
     });
