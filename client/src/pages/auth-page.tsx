@@ -269,7 +269,7 @@ export default function AuthPage() {
                 </CardContent>
                 <CardFooter className="flex justify-center">
                   <div className="text-sm text-muted-foreground">
-                    Already have an account? <button onClick={() => document.querySelector('[data-value="login"]')?.click()} className="pl-1 underline">Login</button>
+                    Already have an account? <button onClick={() => (document.querySelector('[data-value="login"]') as HTMLElement)?.click()} className="pl-1 underline">Login</button>
                   </div>
                 </CardFooter>
               </Card>
