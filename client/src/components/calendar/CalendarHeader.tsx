@@ -9,7 +9,7 @@ interface CalendarHeaderProps {
 
 const CalendarHeader = ({ month, year, onPrevMonth, onNextMonth }: CalendarHeaderProps) => {
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="flex items-center justify-between mb-8">
       <button 
         onClick={onPrevMonth}
         className="p-2 rounded-full hover:bg-gray-100"

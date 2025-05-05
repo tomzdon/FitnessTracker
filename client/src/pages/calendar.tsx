@@ -25,7 +25,7 @@ export default function Calendar() {
   };
 
   // Query for workouts on the selected date
-  const { data: dayWorkouts = [] } = useQuery({
+  const { data: dayWorkouts = [] } = useQuery<any[]>({
     queryKey: ['/api/workouts', selectedDate.toISOString().split('T')[0]],
     // Function to fetch workouts for the selected date
     queryFn: async ({ queryKey }) => {
@@ -42,9 +42,9 @@ export default function Calendar() {
     <div className="container mx-auto px-4 py-6">
       <h1 className="text-3xl font-bold text-center mb-8">Calendar</h1>
       
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
-        {/* Calendar section - 5 columns on large screens */}
-        <div className="lg:col-span-5 bg-white rounded-lg p-6 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Calendar section - 3 columns on large screens */}
+        <div className="lg:col-span-3 bg-white rounded-lg p-6 shadow-sm">
           <CalendarHeader 
             month={monthYear} 
             year={year} 
@@ -60,8 +60,8 @@ export default function Calendar() {
           />
         </div>
         
-        {/* Day panel - 2 columns on large screens */}
-        <div className="lg:col-span-2">
+        {/* Day panel - 1 column on large screens */}
+        <div className="lg:col-span-1">
           <DayPanel 
             selectedDate={selectedDate} 
             workouts={dayWorkouts} 

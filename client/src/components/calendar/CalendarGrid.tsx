@@ -45,7 +45,7 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate }: CalendarGridP
         {dayNames.map((dayName) => (
           <div 
             key={dayName} 
-            className="text-center text-sm text-gray-500 py-2"
+            className="text-center text-xs text-gray-500 py-2"
           >
             {dayName}
           </div>
@@ -53,10 +53,10 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate }: CalendarGridP
       </div>
       
       {/* Calendar grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-2">
         {/* Empty cells for days before the first day of month */}
         {Array.from({ length: dayOfWeekAdjustment }, (_, i) => (
-          <div key={`empty-${i}`} className="h-10 w-10"></div>
+          <div key={`empty-${i}`} className="h-10"></div>
         ))}
         
         {/* Days of the month */}
@@ -64,9 +64,9 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate }: CalendarGridP
           <button
             key={day}
             onClick={() => onSelectDate(new Date(year, month, day))}
-            className={`h-10 w-10 rounded-full flex items-center justify-center text-sm
-              ${isSelected(day) ? 'bg-black text-white' : ''}
-              ${isToday(day) && !isSelected(day) ? 'border border-gray-300' : ''}
+            className={`h-10 w-10 flex items-center justify-center text-sm font-medium rounded-full transition-colors 
+              ${isSelected(day) ? 'bg-black text-white' : 'text-gray-800'}
+              ${!isSelected(day) && isToday(day) ? 'border-2 border-gray-300' : ''}
               ${!isSelected(day) ? 'hover:bg-gray-100' : ''}
             `}
           >
