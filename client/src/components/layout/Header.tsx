@@ -59,14 +59,16 @@ const Header = () => {
               <span className="absolute -top-1 -right-1 bg-red-500 rounded-full w-2.5 h-2.5"></span>
             </button>
           </div>
-          <button className="flex items-center space-x-2 bg-gray-100 rounded-full p-1 pr-3">
-            <div className="bg-gray-700 rounded-full h-8 w-8 overflow-hidden flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <span className="text-sm font-medium">Tomasz</span>
-          </button>
+          <Link href="/profile">
+            <a className="flex items-center space-x-2 bg-gray-100 rounded-full p-1 pr-3">
+              <div className="bg-gray-700 rounded-full h-8 w-8 overflow-hidden flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <span className="text-sm font-medium">Tomasz</span>
+            </a>
+          </Link>
         </div>
       </div>
     </header>

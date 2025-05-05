@@ -1,0 +1,61 @@
+<summary_title>
+User Profile Dashboard with Fitness Statistics and Progress Tracking
+</summary_title>
+
+<image_analysis>
+1. Content Structure:
+- Main Content Elements: Profile section, statistics cards, progress section
+- Content Grouping: Two main sections - Statistics and Progress
+- Visual Hierarchy: Profile info at top, statistics cards below, progress section on right
+- Content Types: Text, icons, placeholder images, buttons
+- Text Elements: Username, handle, section headings, stat numbers, labels
+
+2. Layout Structure:
+- Content Distribution: Three-column layout with profile spanning full width
+- Spacing Patterns: Consistent padding between cards and sections
+- Container Structure: Rounded cards for statistics, bordered sections
+- Grid/Alignment: Left-aligned text, centered profile elements
+- Responsive Behavior: Cards should stack on mobile
+
+3. UI Components (Page-Specific):
+- Content Cards: Statistics cards with icons and numbers
+- Interactive Elements: "Edit profile" button, "Add new" button
+- Data Display Elements: Numerical statistics with labels
+- Status Indicators: Empty state indicators (0 values)
+- Media Components: Profile picture placeholder, progress section placeholder
+
+4. Interactive Patterns:
+- Content Interactions: Clickable cards, edit profile functionality
+- State Changes: Button hover states
+- Dynamic Content: Statistics updates, progress tracking
+- Mobile Interactions: Touch targets for buttons and cards
+</image_analysis>
+
+<development_planning>
+1. Component Structure:
+- ProfileHeader component (photo, name, handle)
+- StatisticsCard component (reusable for different metrics)
+- ProgressSection component
+- AddNewButton component
+- Required props: userData, statisticsData, progressData
+- State: editMode, currentStats, progressUpdates
+
+2. Content Layout:
+- Flexbox for main layout structure
+- CSS Grid for statistics cards
+- Responsive breakpoints for mobile adaptation
+- Margin/padding system for consistent spacing
+
+3. Integration Points:
+- Global theme variables for colors and typography
+- Shared button and card components
+- Profile data management system
+- Real-time stat updates
+
+4. Performance Considerations:
+- Lazy loading for progress section
+- Optimized profile image loading
+- Cached statistics data
+- Debounced stat updates
+- Progressive enhancement for interactive features
+</development_planning>

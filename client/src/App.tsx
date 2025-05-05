@@ -8,6 +8,7 @@ import Discover from "@/pages/discover";
 import Home from "@/pages/home";
 import Calendar from "@/pages/calendar";
 import Favorites from "@/pages/favorites";
+import Profile from "@/pages/profile";
 import Header from "@/components/layout/Header";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import { BackToTop } from "@/components/ui/back-to-top";
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/discover" component={Discover} />
       <Route path="/calendar" component={Calendar} />
       <Route path="/favorites" component={Favorites} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );
