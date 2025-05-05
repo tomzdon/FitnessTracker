@@ -9,22 +9,22 @@ import Discover from "@/pages/discover";
 import Calendar from "@/pages/calendar";
 import Favorites from "@/pages/favorites";
 import Profile from "@/pages/profile";
-import LoginPage from "@/pages/login";
-import RegisterPage from "@/pages/register";
+import AuthPage from "@/pages/auth-page";
 import Header from "@/components/layout/Header";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import { BackToTop } from "@/components/ui/back-to-top";
+import { ProtectedRoute } from "./lib/protected-route";
+import { AuthProvider } from "@/hooks/use-auth";
 
 function AppRoutes() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/discover" component={Discover} />
-      <Route path="/calendar" component={Calendar} />
-      <Route path="/favorites" component={Favorites} />
-      <Route path="/profile" component={Profile} />
-      <Route path="/login" component={LoginPage} />
-      <Route path="/register" component={RegisterPage} />
+      <ProtectedRoute path="/" component={Home} />
+      <ProtectedRoute path="/discover" component={Discover} />
+      <ProtectedRoute path="/calendar" component={Calendar} />
+      <ProtectedRoute path="/favorites" component={Favorites} />
+      <ProtectedRoute path="/profile" component={Profile} />
+      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -34,26 +34,28 @@ function App() {
   // Get current route
   const [location] = useLocation();
   
-  // Check if we're on an auth page (login or register)
-  const isAuthPage = location === '/login' || location === '/register';
+  // Check if we're on the auth page
+  const isAuthPage = location === '/auth';
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="flex flex-col min-h-screen bg-[#f8f9fa]">
-          {/* Only show header on non-auth pages */}
-          {!isAuthPage && <Header />}
-          
-          <main className="flex-1">
-            <AppRoutes />
-          </main>
-          
-          {/* Only show these components on non-auth pages */}
-          {!isAuthPage && <MobileNavigation />}
-          {!isAuthPage && <BackToTop />}
-        </div>
-        <Toaster />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <div className="flex flex-col min-h-screen bg-[#f8f9fa]">
+            {/* Only show header on non-auth pages */}
+            {!isAuthPage && <Header />}
+            
+            <main className="flex-1">
+              <AppRoutes />
+            </main>
+            
+            {/* Only show these components on non-auth pages */}
+            {!isAuthPage && <MobileNavigation />}
+            {!isAuthPage && <BackToTop />}
+          </div>
+          <Toaster />
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
