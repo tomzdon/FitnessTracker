@@ -65,7 +65,7 @@ export class MemStorage implements IStorage {
     this.progressTestIdCounter = 1;
     
     // Create in-memory session store
-    const MemoryStore = require('memorystore')(session);
+    const MemoryStore = createMemoryStore(session);
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000 // prune expired entries every 24h
     });
