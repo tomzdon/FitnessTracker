@@ -52,8 +52,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get workouts
   apiRouter.get('/workouts', async (req: Request, res: Response) => {
     try {
-      const workouts = await storage.getWorkouts();
-      res.json(workouts);
+      // If date is provided as a query parameter, filter workouts for that date
+      const date = req.query.date as string;
+      
+      if (date) {
+        // In a real app, we would query the database for workouts on this date
+        // For now, we'll just return an empty array since we don't have date-specific workouts
+        const workouts = await storage.getWorkouts();
+        // In a real app, we would filter workouts by date
+        // const filteredWorkouts = workouts.filter(workout => workout.date === date);
+        res.json([]);
+      } else {
+        // Return all workouts if no date is specified
+        const workouts = await storage.getWorkouts();
+        res.json(workouts);
+      }
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch workouts' });
     }

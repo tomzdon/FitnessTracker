@@ -1,0 +1,59 @@
+<summary_title>
+Workout Calendar View with Daily Schedule Management
+</summary_title>
+
+<image_analysis>
+1. Content Structure:
+- Main Content Elements: Monthly calendar grid, Today's schedule panel
+- Content Grouping: Left side calendar, Right side daily details
+- Visual Hierarchy: Calendar title > Month/Year > Calendar grid > Today's panel
+- Content Types: Text, interactive calendar cells, empty state illustration
+- Text Elements: "Calendar" heading, month/year, day labels, "No workouts" message
+
+2. Layout Structure:
+- Content Distribution: Two-column layout (70/30 split)
+- Spacing Patterns: Consistent padding between calendar cells, ample whitespace
+- Container Structure: Calendar grid container, Today panel card
+- Grid/Alignment: 7-column calendar grid, centered content alignment
+- Responsive Behavior: Panel likely stacks below calendar on mobile
+
+3. UI Components (Page-Specific):
+- Content Cards/Containers: Calendar grid, Today panel card
+- Interactive Elements: Month navigation arrows, calendar date cells, "Assign new workout" button
+- Data Display Elements: Calendar grid, empty state message
+- Status Indicators: Selected date highlight (day 5)
+- Media Components: Plus icon illustration for empty state
+
+4. Interactive Patterns:
+- Content Interactions: Date selection, month navigation
+- State Changes: Date hover/selection states
+- Dynamic Content: Today panel updates based on date selection
+- Mobile Interactions: Touch-friendly calendar cells and navigation
+</image_analysis>
+
+<development_planning>
+1. Component Structure:
+- CalendarView (parent container)
+- CalendarGrid (monthly view)
+- CalendarHeader (title + navigation)
+- DayPanel (daily schedule view)
+- EmptyState (no workouts view)
+
+2. Content Layout:
+- CSS Grid for calendar layout
+- Flexbox for responsive column arrangement
+- Consistent spacing system
+- Container queries for responsive behavior
+
+3. Integration Points:
+- Global theme variables
+- Shared button components
+- Icon system integration
+- Date formatting utilities
+
+4. Performance Considerations:
+- Calendar date calculations
+- Lazy loading for future months
+- Cached state for viewed months
+- Optimized date selection updates
+</development_planning>
