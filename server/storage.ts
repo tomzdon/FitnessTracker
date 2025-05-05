@@ -233,7 +233,8 @@ export class DatabaseStorage implements IStorage {
     const PostgresStore = connectPg(session);
     this.sessionStore = new PostgresStore({
       conObject: {
-        connectionString: process.env.DATABASE_URL!,
+        connectionString: process.env.SUPABASE_DATABASE_URL!,
+        ssl: { rejectUnauthorized: false } // Required for Supabase connection
       },
       createTableIfMissing: true
     });
@@ -299,7 +300,7 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(workouts, eq(favorites.workoutId, workouts.id))
       .where(eq(favorites.userId, userId));
     
-    return result.map(r => r.workout);
+    return result.map((r: { workout: Workout }) => r.workout);
   }
 
   async addFavorite(insertFavorite: InsertFavorite): Promise<Favorite> {
