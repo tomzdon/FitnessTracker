@@ -9,12 +9,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function runMigrations() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL must be set. Did you forget to provision a database?");
+  // Get the Supabase database URL
+  const databaseUrl = process.env.SUPABASE_DATABASE_URL || process.env.DATABASE_URL;
+  
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL or SUPABASE_DATABASE_URL must be set. Did you forget to provision a database?");
   }
 
+  // Supabase requires SSL but we need to remove any quote characters
+  const connectionString = databaseUrl.replace(/^["']|["']$/g, '');
+  
+  console.log("Connecting to database with connection string:", 
+              connectionString.replace(/postgres.*:(.*)@/, 'postgres***:***@'));
+
   const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString,
+    ssl: { rejectUnauthorized: false } // Required for Supabase connection
   });
 
   try {
@@ -23,7 +33,7 @@ async function runMigrations() {
     // Get all migration files
     const migrationsDir = path.join(__dirname, '..', 'migrations');
     const migrationFiles = fs.readdirSync(migrationsDir)
-      .filter(file => file.endsWith('.sql'))
+      .filter(file => file.endsWith('.sql') && file.includes('create_programs_tables'))
       .sort(); // This ensures migrations run in order by filename
     
     // Create migrations table if it doesn't exist

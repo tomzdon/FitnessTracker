@@ -319,7 +319,7 @@ export class MemStorage implements IStorage {
     const newUserProgram: UserProgram = {
       ...userProgram,
       id,
-      startDate: new Date(),
+      startedAt: new Date(),
       currentDay: userProgram.currentDay || 1,
       isActive: userProgram.isActive !== undefined ? userProgram.isActive : true,
       completedAt: userProgram.completedAt || null,
@@ -432,14 +432,26 @@ export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
   
   constructor() {
-    // Initialize with a memory store only
-    // This avoids async/await issues with initialization
-    const MemoryStore = createMemoryStore(session);
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // prune expired entries every 24h
-    });
+    // Use PostgreSQL for session storage
+    const PgSessionStore = connectPg(session);
     
-    console.log("Using memory session store for now");
+    // Create the session store with the pool from db.ts
+    try {
+      this.sessionStore = new PgSessionStore({
+        pool,
+        createTableIfMissing: true,
+        tableName: 'session'
+      });
+      console.log("Using PostgreSQL session store");
+    } catch (error) {
+      console.error("Failed to initialize PostgreSQL session store:", error);
+      // Fallback to memory store
+      const MemoryStore = createMemoryStore(session);
+      this.sessionStore = new MemoryStore({
+        checkPeriod: 86400000 // prune expired entries every 24h
+      });
+      console.log("Falling back to memory session store");
+    }
   }
 
   // User methods
