@@ -171,6 +171,36 @@ export function ActiveProgramCard() {
     );
   }
 
+  // Unsubscribe from program mutation
+  const unsubscribeProgramMutation = useMutation({
+    mutationFn: async (userProgramId: number) => {
+      const res = await apiRequest("POST", `/api/user-programs/${userProgramId}/unsubscribe`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Unsubscribed from program",
+        description: "You have successfully unsubscribed from the program",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/active-program"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user-programs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/scheduled-workouts"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to unsubscribe",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Handle unsubscribe
+  const handleUnsubscribe = () => {
+    if (!data || !data.userProgram) return;
+    unsubscribeProgramMutation.mutate(data.userProgram.id);
+  };
+  
   const { userProgram, program, workouts } = data;
   const progress = (userProgram.currentDay / program.duration) * 100;
   const currentDayWorkout = workouts.find((w: any) => w.day === userProgram.currentDay);
@@ -180,9 +210,21 @@ export function ActiveProgramCard() {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between">
           <span>{program.title}</span>
-          <Button variant="ghost" size="sm" onClick={handleViewProgram}>
-            View Program
-          </Button>
+          <div className="flex space-x-2">
+            <Button variant="ghost" size="sm" onClick={handleViewProgram}>
+              View Program
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleUnsubscribe}
+              disabled={unsubscribeProgramMutation.isPending}
+            >
+              {unsubscribeProgramMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : "Unsubscribe"}
+            </Button>
+          </div>
         </CardTitle>
         <CardDescription>
           Day {userProgram.currentDay} of {program.duration}
