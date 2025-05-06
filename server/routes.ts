@@ -163,6 +163,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get workout by ID (no auth required - public endpoint)
+  apiRouter.get('/workouts/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid workout ID' });
+      }
+      
+      const workout = await storage.getWorkout(id);
+      if (!workout) {
+        return res.status(404).json({ message: 'Workout not found' });
+      }
+      
+      res.json(workout);
+    } catch (error) {
+      console.error('Error getting workout by ID:', error);
+      res.status(500).json({ message: 'Failed to fetch workout' });
+    }
+  });
+  
   // Get completed workouts
   apiRouter.get('/completedWorkouts', isAuthenticated, async (req: Request, res: Response) => {
     try {

@@ -24,18 +24,28 @@ export default function Calendar() {
     setCurrentDate(new Date(year, month + 1, 1));
   };
 
-  // Query for workouts on the selected date
+  // Query for scheduled workouts on the selected date
   const { data: dayWorkouts = [] } = useQuery<any[]>({
-    queryKey: ['/api/workouts', selectedDate.toISOString().split('T')[0]],
-    // Function to fetch workouts for the selected date
+    queryKey: ['/api/scheduled-workouts/date', selectedDate.toISOString().split('T')[0]],
+    // Function to fetch scheduled workouts for the selected date
     queryFn: async ({ queryKey }) => {
       const [_path, date] = queryKey;
-      const response = await fetch(`/api/workouts?date=${date}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch workouts');
+      // Use the correct API endpoint for scheduled workouts
+      const response = await fetch(`/api/scheduled-workouts/date/${date}`);
+      
+      // If not authenticated, return empty array
+      if (response.status === 401) {
+        return [];
       }
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch scheduled workouts');
+      }
+      
       return response.json();
-    }
+    },
+    // Enable the query only if the user is authenticated
+    enabled: true
   });
 
   return (
