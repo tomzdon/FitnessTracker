@@ -40,12 +40,7 @@ export default function AuthPage() {
   const { user, isLoading, loginMutation, registerMutation } = useAuth();
   const [_, navigate] = useLocation();
   
-  // If user is already logged in, redirect to home page
-  if (user) {
-    return <Redirect to="/" />;
-  }
-
-  // Login form setup
+  // Login form setup - Define all hooks before any conditional returns
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -72,6 +67,12 @@ export default function AuthPage() {
       workoutReminders: false,
     },
   });
+  
+  // If user is already logged in, redirect to home page
+  // This must come AFTER all hook calls to avoid the "Rendered fewer hooks than expected" error
+  if (user) {
+    return <Redirect to="/" />;
+  }
 
   // Login form submission
   const onLoginSubmit = (data: LoginFormValues) => {
