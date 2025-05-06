@@ -179,7 +179,25 @@ export default function Profile() {
         <TabsContent value="more" className="mt-6">
           <div className="bg-white rounded-lg p-8 shadow-sm">
             <h2 className="text-xl font-semibold mb-4">Additional Settings</h2>
-            <p>More settings will appear here.</p>
+            
+            <div className="border-t mt-8 pt-6">
+              <h3 className="text-lg font-medium text-red-600 mb-4">Danger Zone</h3>
+              <Button 
+                variant="destructive"
+                onClick={() => logoutMutation.mutate()}
+                disabled={logoutMutation.isPending}
+                className="w-full md:w-auto"
+              >
+                {logoutMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing Out...
+                  </>
+                ) : (
+                  "Sign Out"
+                )}
+              </Button>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
