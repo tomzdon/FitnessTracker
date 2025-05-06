@@ -222,6 +222,7 @@ export const userPrograms = pgTable("user_programs", {
   currentDay: integer("current_day").default(1),
   isActive: boolean("is_active").default(true),
   completedAt: timestamp("completed_at"),
+  unsubscribedAt: timestamp("unsubscribed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -260,6 +261,51 @@ export const updatedProgramsRelations = relations(programs, ({ many }) => ({
 }));
 
 // Session - managed by connect-pg-simple
+// Scheduled Workouts - to track workouts scheduled on specific dates for users
+export const scheduledWorkouts = pgTable("scheduled_workouts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  programId: integer("program_id").notNull().references(() => programs.id),
+  workoutId: integer("workout_id").notNull().references(() => workouts.id),
+  programDay: integer("program_day").notNull(),
+  scheduledDate: timestamp("scheduled_date").notNull(),
+  isCompleted: boolean("is_completed").default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertScheduledWorkoutSchema = createInsertSchema(scheduledWorkouts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertScheduledWorkout = z.infer<typeof insertScheduledWorkoutSchema>;
+export type ScheduledWorkout = typeof scheduledWorkouts.$inferSelect;
+
+// Define scheduledWorkouts relations
+export const scheduledWorkoutsRelations = relations(scheduledWorkouts, ({ one }) => ({
+  user: one(users, {
+    fields: [scheduledWorkouts.userId],
+    references: [users.id],
+  }),
+  program: one(programs, {
+    fields: [scheduledWorkouts.programId],
+    references: [programs.id],
+  }),
+  workout: one(workouts, {
+    fields: [scheduledWorkouts.workoutId],
+    references: [workouts.id],
+  }),
+}));
+
+// Update users relations to include scheduledWorkouts
+export const updatedUsersRelationsWithSchedule = relations(users, ({ many }) => ({
+  completedWorkouts: many(completedWorkouts),
+  favorites: many(favorites),
+  progressTests: many(progressTests),
+  userPrograms: many(userPrograms),
+  scheduledWorkouts: many(scheduledWorkouts),
+}));
+
 export const session = pgTable("session", {
   sid: varchar("sid").primaryKey().notNull(),
   sess: json("sess").notNull(),

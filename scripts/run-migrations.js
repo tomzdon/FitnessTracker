@@ -33,7 +33,7 @@ async function runMigrations() {
     // Get all migration files
     const migrationsDir = path.join(__dirname, '..', 'migrations');
     const migrationFiles = fs.readdirSync(migrationsDir)
-      .filter(file => file.endsWith('.sql') && file.includes('create_programs_tables'))
+      .filter(file => file.endsWith('.sql'))
       .sort(); // This ensures migrations run in order by filename
     
     // Create migrations table if it doesn't exist
