@@ -9,7 +9,7 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { insertUserSchema } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect, Link } from "wouter";
+import { Redirect, Link, useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 
 // Schema for login form
@@ -38,6 +38,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
   const { user, isLoading, loginMutation, registerMutation } = useAuth();
+  const [_, navigate] = useLocation();
   
   // If user is already logged in, redirect to home page
   if (user) {
@@ -95,7 +96,13 @@ export default function AuthPage() {
             </p>
           </div>
           
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs defaultValue="login" className="w-full" 
+            onValueChange={(value) => {
+              if (value === "register") {
+                navigate("/register");
+              }
+            }}
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Register</TabsTrigger>
