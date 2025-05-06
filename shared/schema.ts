@@ -119,6 +119,43 @@ export interface Statistics {
   progressTests: number;
 }
 
+// Programs
+export const programs = pgTable("programs", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  imageUrl: text("image_url"),
+  difficulty: text("difficulty").notNull(), // easy, medium, hard
+  duration: integer("duration").notNull(), // total duration in days
+  category: text("category"), // strength, cardio, flexibility, etc.
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertProgramSchema = createInsertSchema(programs).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertProgram = z.infer<typeof insertProgramSchema>;
+export type Program = typeof programs.$inferSelect;
+
+// Program Workouts Junction Table
+export const programWorkouts = pgTable("program_workouts", {
+  id: serial("id").primaryKey(),
+  programId: integer("program_id").notNull().references(() => programs.id),
+  workoutId: integer("workout_id").notNull().references(() => workouts.id),
+  day: integer("day").notNull(), // day number in the program sequence
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertProgramWorkoutSchema = createInsertSchema(programWorkouts).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertProgramWorkout = z.infer<typeof insertProgramWorkoutSchema>;
+export type ProgramWorkout = typeof programWorkouts.$inferSelect;
+
 // Define relationships
 export const usersRelations = relations(users, ({ many }) => ({
   completedWorkouts: many(completedWorkouts),
@@ -129,6 +166,7 @@ export const usersRelations = relations(users, ({ many }) => ({
 export const workoutsRelations = relations(workouts, ({ many }) => ({
   completedWorkouts: many(completedWorkouts),
   favorites: many(favorites),
+  programWorkouts: many(programWorkouts),
 }));
 
 export const favoritesRelations = relations(favorites, ({ one }) => ({
@@ -157,6 +195,21 @@ export const progressTestsRelations = relations(progressTests, ({ one }) => ({
   user: one(users, {
     fields: [progressTests.userId],
     references: [users.id],
+  }),
+}));
+
+export const programsRelations = relations(programs, ({ many }) => ({
+  programWorkouts: many(programWorkouts)
+}));
+
+export const programWorkoutsRelations = relations(programWorkouts, ({ one }) => ({
+  program: one(programs, {
+    fields: [programWorkouts.programId],
+    references: [programs.id],
+  }),
+  workout: one(workouts, {
+    fields: [programWorkouts.workoutId],
+    references: [workouts.id],
   }),
 }));
 
