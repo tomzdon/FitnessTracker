@@ -25,30 +25,44 @@ export default function Discover() {
     queryFn: getQueryFn({ on401: 'returnNull' }),
   });
 
-  // Fetch programs
-  const programsQuery = useQuery<Program[]>({
-    queryKey: ['/api/programs'],
-    queryFn: getQueryFn({ on401: 'returnNull' }),
-  });
+  // Fetch programs - temporarily commented out until the database is properly set up
+  // const programsQuery = useQuery<Program[]>({
+  //   queryKey: ['/api/programs'],
+  //   queryFn: getQueryFn({ on401: 'returnNull' }),
+  // });
+
+  // Mock programs data for now since we can't access the database
+  const mockPrograms = [
+    {
+      id: 1,
+      title: "MAX Program",
+      description: "Complete full-body transformation in 50 days",
+      imageUrl: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=1000&auto=format&fit=crop",
+      difficulty: "intermediate",
+      duration: 50,
+      category: "strength",
+      createdAt: new Date()
+    }
+  ];
 
   // Loading state
-  const isLoading = workoutsQuery.isLoading || programsQuery.isLoading;
-  const hasError = workoutsQuery.error || programsQuery.error;
+  const isLoading = workoutsQuery.isLoading; // || programsQuery.isLoading;
+  const hasError = workoutsQuery.error; // || programsQuery.error;
 
   // Filter content based on active category
   let displayContent: any[] = [];
   
-  if (workoutsQuery.data && programsQuery.data) {
+  if (workoutsQuery.data) { // && programsQuery.data) {
     if (activeCategory === 'all') {
       // Combine all content types
       displayContent = [
-        ...programsQuery.data.map(program => ({
+        ...mockPrograms.map(program => ({
           id: `program-${program.id}`,
           type: 'program',
           title: program.title,
           subtitle: program.description,
-          imageUrl: program.imageUrl || 'https://source.unsplash.com/random/600x800/?fitness',
-          totalDays: 30, // Default value for now
+          imageUrl: program.imageUrl || 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=1000&auto=format&fit=crop',
+          totalDays: program.duration, 
           day: 1, // Default value for now
           duration: 45, // Default value for now
         })),
@@ -57,7 +71,7 @@ export default function Discover() {
           type: 'workout',
           title: workout.title,
           subtitle: workout.subtitle,
-          imageUrl: workout.imageUrl || 'https://source.unsplash.com/random/600x800/?workout',
+          imageUrl: workout.imageUrl || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop',
           day: workout.day,
           totalDays: workout.totalDays,
           duration: workout.duration || 30, // Default value if duration not provided
@@ -65,13 +79,13 @@ export default function Discover() {
       ];
     } else if (activeCategory === 'programs') {
       // Show only programs
-      displayContent = programsQuery.data.map(program => ({
+      displayContent = mockPrograms.map(program => ({
         id: `program-${program.id}`,
         type: 'program',
         title: program.title,
         subtitle: program.description,
-        imageUrl: program.imageUrl || 'https://source.unsplash.com/random/600x800/?fitness-program',
-        totalDays: 30, // Default value for now
+        imageUrl: program.imageUrl || 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=1000&auto=format&fit=crop',
+        totalDays: program.duration,
         day: 1, // Default value for now
         duration: 45, // Default value for now
       }));
@@ -82,7 +96,7 @@ export default function Discover() {
         type: 'workout',
         title: workout.title,
         subtitle: workout.subtitle,
-        imageUrl: workout.imageUrl || 'https://source.unsplash.com/random/600x800/?workout-fitness',
+        imageUrl: workout.imageUrl || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop',
         day: workout.day,
         totalDays: workout.totalDays,
         duration: workout.duration || 30, // Default value if duration not provided
