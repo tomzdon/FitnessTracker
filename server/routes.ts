@@ -320,6 +320,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Program not found' });
       }
       
+      // Check if user already has an active program
+      const activeProgram = await storage.getActiveUserProgram(userId);
+      if (activeProgram) {
+        return res.status(400).json({ 
+          message: 'User already has an active program',
+          activeProgramId: activeProgram.userProgram.id 
+        });
+      }
+      
+      // Assign the program to the user
       const userProgram = await storage.assignUserProgram({
         userId,
         programId,
@@ -327,7 +337,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         isActive: true
       });
       
-      res.status(201).json(userProgram);
+      // Get program workouts
+      const { workouts } = await storage.getProgramWithWorkouts(programId);
+      
+      // Schedule workouts every 3 days starting from today
+      const startDate = new Date();
+      const scheduledWorkouts = [];
+      
+      for (let i = 0; i < workouts.length; i++) {
+        const workout = workouts[i];
+        const scheduledDate = new Date(startDate);
+        scheduledDate.setDate(startDate.getDate() + (i * 3)); // Every 3 days
+        
+        const scheduledWorkout = await storage.addScheduledWorkout({
+          userId,
+          programId,
+          workoutId: workout.id,
+          programDay: i + 1,
+          scheduledDate,
+          isCompleted: false
+        });
+        
+        scheduledWorkouts.push(scheduledWorkout);
+      }
+      
+      res.status(201).json({
+        userProgram,
+        scheduledWorkouts
+      });
     } catch (error) {
       console.error('Error assigning program:', error);
       res.status(500).json({ message: 'Failed to assign program to user' });
@@ -352,6 +389,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error updating user program:', error);
       res.status(500).json({ message: 'Failed to update user program' });
+    }
+  });
+  
+  apiRouter.post('/user-programs/:id/unsubscribe', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user!.id;
+      
+      // Unsubscribe from program
+      const updatedUserProgram = await storage.unsubscribeFromProgram(id);
+      
+      // Ensure that the user can only unsubscribe from their own programs
+      if (updatedUserProgram.userId !== userId) {
+        return res.status(403).json({ message: 'Not authorized to unsubscribe from this program' });
+      }
+      
+      res.json(updatedUserProgram);
+    } catch (error) {
+      console.error('Error unsubscribing from program:', error);
+      res.status(500).json({ message: 'Failed to unsubscribe from program' });
+    }
+  });
+  
+  // Scheduled Workouts endpoints
+  apiRouter.get('/scheduled-workouts', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const scheduledWorkouts = await storage.getScheduledWorkouts(userId);
+      res.json(scheduledWorkouts);
+    } catch (error) {
+      console.error('Error getting scheduled workouts:', error);
+      res.status(500).json({ message: 'Failed to fetch scheduled workouts' });
+    }
+  });
+  
+  apiRouter.get('/scheduled-workouts/date/:date', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const date = new Date(req.params.date);
+      
+      if (isNaN(date.getTime())) {
+        return res.status(400).json({ message: 'Invalid date format' });
+      }
+      
+      const scheduledWorkouts = await storage.getScheduledWorkoutsByDate(userId, date);
+      res.json(scheduledWorkouts);
+    } catch (error) {
+      console.error('Error getting scheduled workouts by date:', error);
+      res.status(500).json({ message: 'Failed to fetch scheduled workouts' });
+    }
+  });
+  
+  apiRouter.get('/scheduled-workouts/range/:startDate/:endDate', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const startDate = new Date(req.params.startDate);
+      const endDate = new Date(req.params.endDate);
+      
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(400).json({ message: 'Invalid date format' });
+      }
+      
+      const scheduledWorkouts = await storage.getScheduledWorkoutsByDateRange(userId, startDate, endDate);
+      res.json(scheduledWorkouts);
+    } catch (error) {
+      console.error('Error getting scheduled workouts by date range:', error);
+      res.status(500).json({ message: 'Failed to fetch scheduled workouts' });
+    }
+  });
+  
+  apiRouter.post('/scheduled-workouts', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const { programId, workoutId, programDay, scheduledDate } = req.body;
+      
+      if (!programId || !workoutId || !programDay || !scheduledDate) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+      
+      const scheduledWorkout = await storage.addScheduledWorkout({
+        userId,
+        programId: parseInt(programId),
+        workoutId: parseInt(workoutId),
+        programDay: parseInt(programDay),
+        scheduledDate: new Date(scheduledDate),
+        isCompleted: false
+      });
+      
+      res.status(201).json(scheduledWorkout);
+    } catch (error) {
+      console.error('Error adding scheduled workout:', error);
+      res.status(500).json({ message: 'Failed to schedule workout' });
+    }
+  });
+  
+  apiRouter.put('/scheduled-workouts/:id/complete', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { isCompleted } = req.body;
+      
+      if (isCompleted === undefined) {
+        return res.status(400).json({ message: 'Missing isCompleted field' });
+      }
+      
+      const updatedWorkout = await storage.markScheduledWorkoutCompleted(id, Boolean(isCompleted));
+      res.json(updatedWorkout);
+    } catch (error) {
+      console.error('Error updating scheduled workout:', error);
+      res.status(500).json({ message: 'Failed to update scheduled workout' });
     }
   });
 

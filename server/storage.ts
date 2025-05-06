@@ -336,6 +336,7 @@ export class MemStorage implements IStorage {
       currentDay: userProgram.currentDay || 1,
       isActive: userProgram.isActive !== undefined ? userProgram.isActive : true,
       completedAt: userProgram.completedAt || null,
+      unsubscribedAt: null,
       createdAt: new Date()
     };
     
@@ -475,8 +476,8 @@ export class MemStorage implements IStorage {
     const workout: ScheduledWorkout = {
       ...scheduledWorkout,
       id,
-      is_completed: scheduledWorkout.is_completed || false,
-      created_at: new Date()
+      isCompleted: scheduledWorkout.isCompleted || false,
+      createdAt: new Date()
     };
     this.scheduledWorkouts.set(id, workout);
     return workout;
@@ -490,7 +491,7 @@ export class MemStorage implements IStorage {
     
     const updatedWorkout: ScheduledWorkout = {
       ...scheduledWorkout,
-      is_completed: isCompleted
+      isCompleted: isCompleted
     };
     
     this.scheduledWorkouts.set(id, updatedWorkout);
@@ -890,8 +891,8 @@ export class DatabaseStorage implements IStorage {
       .insert(scheduledWorkouts)
       .values({
         ...scheduledWorkout,
-        is_completed: scheduledWorkout.is_completed || false,
-        created_at: new Date()
+        isCompleted: scheduledWorkout.isCompleted || false,
+        createdAt: new Date()
       })
       .returning();
     
@@ -901,7 +902,7 @@ export class DatabaseStorage implements IStorage {
   async markScheduledWorkoutCompleted(id: number, isCompleted: boolean): Promise<ScheduledWorkout> {
     const [updatedWorkout] = await db
       .update(scheduledWorkouts)
-      .set({ is_completed: isCompleted })
+      .set({ isCompleted: isCompleted })
       .where(eq(scheduledWorkouts.id, id))
       .returning();
     
