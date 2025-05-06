@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { startOfMonth, endOfMonth, format } from "date-fns";
 
 interface CalendarGridProps {
   year: number;
@@ -7,7 +9,17 @@ interface CalendarGridProps {
   onSelectDate: (date: Date) => void;
 }
 
+interface ScheduledWorkout {
+  id: number;
+  scheduledDate: string;
+  workoutId: number;
+  isCompleted: boolean;
+}
+
 const CalendarGrid = ({ year, month, selectedDate, onSelectDate }: CalendarGridProps) => {
+  // Create a map to track scheduled workouts by day
+  const [scheduledWorkoutsByDay, setScheduledWorkoutsByDay] = useState<Record<number, ScheduledWorkout[]>>({});
+  
   // Generate calendar grid data
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = new Date(year, month, 1).getDay();
@@ -18,6 +30,69 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate }: CalendarGridP
   
   // Day names (Monday first)
   const dayNames = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+  
+  // Calculate start and end dates for the month
+  const start = startOfMonth(new Date(year, month));
+  const end = endOfMonth(new Date(year, month));
+  
+  // Format dates for the API
+  const startDate = format(start, 'yyyy-MM-dd');
+  const endDate = format(end, 'yyyy-MM-dd');
+  
+  // Fetch scheduled workouts for the current month
+  const { data: monthWorkouts = [], isLoading } = useQuery<ScheduledWorkout[]>({
+    queryKey: ['/api/scheduled-workouts/range', startDate, endDate],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/scheduled-workouts/range/${startDate}/${endDate}`);
+        
+        if (response.status === 401) {
+          return []; // Not authenticated
+        }
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch workouts');
+        }
+        
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching scheduled workouts:', error);
+        return [];
+      }
+    },
+  });
+  
+  // Organize scheduled workouts by day
+  useEffect(() => {
+    const workoutsByDay: Record<number, ScheduledWorkout[]> = {};
+    
+    monthWorkouts.forEach(workout => {
+      const workoutDate = new Date(workout.scheduledDate);
+      const day = workoutDate.getDate();
+      
+      if (!workoutsByDay[day]) {
+        workoutsByDay[day] = [];
+      }
+      
+      workoutsByDay[day].push(workout);
+    });
+    
+    setScheduledWorkoutsByDay(workoutsByDay);
+  }, [monthWorkouts]);
+  
+  // Check if a date has workouts scheduled
+  const hasWorkout = (day: number) => {
+    return scheduledWorkoutsByDay[day] && scheduledWorkoutsByDay[day].length > 0;
+  };
+  
+  // Check if all workouts on a day are completed
+  const isCompleted = (day: number) => {
+    if (!scheduledWorkoutsByDay[day] || scheduledWorkoutsByDay[day].length === 0) {
+      return false;
+    }
+    
+    return scheduledWorkoutsByDay[day].every(workout => workout.isCompleted);
+  };
   
   // Check if a date is today
   const isToday = (day: number) => {
@@ -61,17 +136,34 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate }: CalendarGridP
         
         {/* Days of the month */}
         {days.map((day) => (
-          <button
-            key={day}
-            onClick={() => onSelectDate(new Date(year, month, day))}
-            className={`h-10 w-10 flex items-center justify-center text-sm font-medium rounded-full transition-colors 
-              ${isSelected(day) ? 'bg-black text-white' : 'text-gray-800'}
-              ${!isSelected(day) && isToday(day) ? 'border-2 border-gray-300' : ''}
-              ${!isSelected(day) ? 'hover:bg-gray-100' : ''}
-            `}
-          >
-            {day}
-          </button>
+          <div key={day} className="relative">
+            <button
+              onClick={() => onSelectDate(new Date(year, month, day))}
+              className={`h-10 w-10 flex items-center justify-center text-sm font-medium rounded-full transition-colors relative
+                ${isSelected(day) ? 'bg-black text-white' : 'text-gray-800'}
+                ${!isSelected(day) && isToday(day) ? 'border-2 border-gray-300' : ''}
+                ${!isSelected(day) && hasWorkout(day) && isCompleted(day) ? 'bg-green-100' : ''}
+                ${!isSelected(day) && hasWorkout(day) && !isCompleted(day) ? 'bg-blue-100' : ''}
+                ${!isSelected(day) ? 'hover:bg-gray-100' : ''}
+              `}
+            >
+              {day}
+              
+              {/* Dot indicator for scheduled workouts */}
+              {hasWorkout(day) && !isSelected(day) && (
+                <span className={`absolute -bottom-1 left-1/2 transform -translate-x-1/2 h-1.5 w-1.5 rounded-full
+                  ${isCompleted(day) ? 'bg-green-500' : 'bg-blue-500'}
+                `}></span>
+              )}
+            </button>
+            
+            {/* Badge for multiple workouts */}
+            {scheduledWorkoutsByDay[day] && scheduledWorkoutsByDay[day].length > 1 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">
+                {scheduledWorkoutsByDay[day].length}
+              </span>
+            )}
+          </div>
         ))}
       </div>
     </div>
