@@ -74,12 +74,42 @@ export function ActiveProgramCard() {
       });
     },
   });
+  
+  // Unsubscribe from program mutation
+  const unsubscribeMutation = useMutation({
+    mutationFn: async (userProgramId: number) => {
+      const res = await apiRequest("POST", `/api/user-programs/${userProgramId}/unsubscribe`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Unsubscribed from program",
+        description: "You have successfully unsubscribed from the program",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/active-program"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user-programs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/scheduled-workouts"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to unsubscribe",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Handle viewing program details
   const handleViewProgram = () => {
     if (data && data.program) {
       navigate(`/programs/${data.program.id}`);
     }
+  };
+  
+  // Handle unsubscribe
+  const handleUnsubscribe = () => {
+    if (!data || !data.userProgram) return;
+    unsubscribeMutation.mutate(data.userProgram.id);
   };
   
   // Handle completing today's workout and advancing to next day
@@ -170,36 +200,6 @@ export function ActiveProgramCard() {
       </Card>
     );
   }
-
-  // Unsubscribe from program mutation
-  const unsubscribeProgramMutation = useMutation({
-    mutationFn: async (userProgramId: number) => {
-      const res = await apiRequest("POST", `/api/user-programs/${userProgramId}/unsubscribe`);
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Unsubscribed from program",
-        description: "You have successfully unsubscribed from the program",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/active-program"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/user-programs"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/scheduled-workouts"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Failed to unsubscribe",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-  // Handle unsubscribe
-  const handleUnsubscribe = () => {
-    if (!data || !data.userProgram) return;
-    unsubscribeProgramMutation.mutate(data.userProgram.id);
-  };
   
   const { userProgram, program, workouts } = data;
   const progress = (userProgram.currentDay / program.duration) * 100;
@@ -218,9 +218,9 @@ export function ActiveProgramCard() {
               variant="outline" 
               size="sm" 
               onClick={handleUnsubscribe}
-              disabled={unsubscribeProgramMutation.isPending}
+              disabled={unsubscribeMutation.isPending}
             >
-              {unsubscribeProgramMutation.isPending ? (
+              {unsubscribeMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : "Unsubscribe"}
             </Button>
