@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Workout, type InsertWorkout, type Favorite, type InsertFavorite, type CompletedWorkout, type InsertCompletedWorkout, type ProgressTest, type InsertProgressTest, type Program, type InsertProgram, type ProgramWorkout, type InsertProgramWorkout, type UserProgram, type InsertUserProgram, type Statistics, users, workouts, favorites, completedWorkouts, progressTests, programs, programWorkouts, userPrograms } from "@shared/schema";
+import { type User, type InsertUser, type Workout, type InsertWorkout, type Favorite, type InsertFavorite, type CompletedWorkout, type InsertCompletedWorkout, type ProgressTest, type InsertProgressTest, type Program, type InsertProgram, type ProgramWorkout, type InsertProgramWorkout, type UserProgram, type InsertUserProgram, type ScheduledWorkout, type InsertScheduledWorkout, type Statistics, users, workouts, favorites, completedWorkouts, progressTests, programs, programWorkouts, userPrograms, scheduledWorkouts } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import session from "express-session";
@@ -40,6 +40,15 @@ export interface IStorage {
   getActiveUserProgram(userId: number): Promise<{userProgram: UserProgram, program: Program, workouts: Workout[]} | undefined>;
   assignUserProgram(userProgram: InsertUserProgram): Promise<UserProgram>;
   updateUserProgramProgress(id: number, data: { currentDay?: number, isActive?: boolean, completedAt?: Date }): Promise<UserProgram>;
+  unsubscribeFromProgram(userProgramId: number): Promise<UserProgram>;
+  
+  // Scheduled Workout methods
+  getScheduledWorkouts(userId: number): Promise<ScheduledWorkout[]>;
+  getScheduledWorkoutsByDate(userId: number, date: Date): Promise<ScheduledWorkout[]>;
+  getScheduledWorkoutsByDateRange(userId: number, startDate: Date, endDate: Date): Promise<ScheduledWorkout[]>;
+  addScheduledWorkout(scheduledWorkout: InsertScheduledWorkout): Promise<ScheduledWorkout>;
+  markScheduledWorkoutCompleted(id: number, isCompleted: boolean): Promise<ScheduledWorkout>;
+  deleteScheduledWorkoutsForProgram(userId: number, programId: number): Promise<void>;
   
   // Favorite methods
   getFavorites(userId: number): Promise<Workout[]>;
@@ -70,6 +79,7 @@ export class MemStorage implements IStorage {
   private favorites: Map<number, Favorite>;
   private completedWorkouts: Map<number, CompletedWorkout>;
   private progressTests: Map<number, ProgressTest>;
+  private scheduledWorkouts: Map<number, ScheduledWorkout>;
   
   public sessionStore: session.Store;
   
@@ -81,6 +91,7 @@ export class MemStorage implements IStorage {
   private favoriteIdCounter: number;
   private completedWorkoutIdCounter: number;
   private progressTestIdCounter: number;
+  private scheduledWorkoutIdCounter: number;
 
   constructor() {
     this.users = new Map();
@@ -91,6 +102,7 @@ export class MemStorage implements IStorage {
     this.favorites = new Map();
     this.completedWorkouts = new Map();
     this.progressTests = new Map();
+    this.scheduledWorkouts = new Map();
     
     this.userIdCounter = 1;
     this.workoutIdCounter = 1;
@@ -100,6 +112,7 @@ export class MemStorage implements IStorage {
     this.favoriteIdCounter = 1;
     this.completedWorkoutIdCounter = 1;
     this.progressTestIdCounter = 1;
+    this.scheduledWorkoutIdCounter = 1;
     
     // Create in-memory session store
     const MemoryStore = createMemoryStore(session);
@@ -347,6 +360,26 @@ export class MemStorage implements IStorage {
     return updatedUserProgram;
   }
   
+  async unsubscribeFromProgram(userProgramId: number): Promise<UserProgram> {
+    const userProgram = this.userPrograms.get(userProgramId);
+    if (!userProgram) {
+      throw new Error('User program not found');
+    }
+    
+    const updatedUserProgram: UserProgram = {
+      ...userProgram,
+      isActive: false,
+      unsubscribedAt: new Date()
+    };
+    
+    this.userPrograms.set(userProgramId, updatedUserProgram);
+    
+    // Also delete all scheduled workouts for this program
+    await this.deleteScheduledWorkoutsForProgram(userProgram.userId, userProgram.programId);
+    
+    return updatedUserProgram;
+  }
+  
   // Favorite methods
   async getFavorites(userId: number): Promise<Workout[]> {
     const userFavorites = Array.from(this.favorites.values())
@@ -408,6 +441,71 @@ export class MemStorage implements IStorage {
     };
     this.progressTests.set(id, progressTest);
     return progressTest;
+  }
+  
+  // Scheduled Workout methods
+  async getScheduledWorkouts(userId: number): Promise<ScheduledWorkout[]> {
+    return Array.from(this.scheduledWorkouts.values())
+      .filter(sw => sw.userId === userId);
+  }
+  
+  async getScheduledWorkoutsByDate(userId: number, date: Date): Promise<ScheduledWorkout[]> {
+    const scheduledDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    return Array.from(this.scheduledWorkouts.values())
+      .filter(sw => {
+        const swDate = new Date(sw.scheduledDate.getFullYear(), sw.scheduledDate.getMonth(), sw.scheduledDate.getDate());
+        return sw.userId === userId && swDate.getTime() === scheduledDate.getTime();
+      });
+  }
+  
+  async getScheduledWorkoutsByDateRange(userId: number, startDate: Date, endDate: Date): Promise<ScheduledWorkout[]> {
+    const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    
+    return Array.from(this.scheduledWorkouts.values())
+      .filter(sw => {
+        const swDate = new Date(sw.scheduledDate.getFullYear(), sw.scheduledDate.getMonth(), sw.scheduledDate.getDate());
+        return sw.userId === userId && swDate.getTime() >= start.getTime() && swDate.getTime() <= end.getTime();
+      });
+  }
+  
+  async addScheduledWorkout(scheduledWorkout: InsertScheduledWorkout): Promise<ScheduledWorkout> {
+    const id = this.scheduledWorkoutIdCounter++;
+    const workout: ScheduledWorkout = {
+      ...scheduledWorkout,
+      id,
+      is_completed: scheduledWorkout.is_completed || false,
+      created_at: new Date()
+    };
+    this.scheduledWorkouts.set(id, workout);
+    return workout;
+  }
+  
+  async markScheduledWorkoutCompleted(id: number, isCompleted: boolean): Promise<ScheduledWorkout> {
+    const scheduledWorkout = this.scheduledWorkouts.get(id);
+    if (!scheduledWorkout) {
+      throw new Error('Scheduled workout not found');
+    }
+    
+    const updatedWorkout: ScheduledWorkout = {
+      ...scheduledWorkout,
+      is_completed: isCompleted
+    };
+    
+    this.scheduledWorkouts.set(id, updatedWorkout);
+    return updatedWorkout;
+  }
+  
+  async deleteScheduledWorkoutsForProgram(userId: number, programId: number): Promise<void> {
+    // Get all scheduled workouts for this user and program
+    const workouts = Array.from(this.scheduledWorkouts.values())
+      .filter(sw => sw.userId === userId && sw.programId === programId);
+    
+    // Delete each one
+    workouts.forEach(sw => {
+      this.scheduledWorkouts.delete(sw.id);
+    });
   }
   
   // Statistics
@@ -721,6 +819,106 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedUserProgram;
+  }
+  
+  async unsubscribeFromProgram(userProgramId: number): Promise<UserProgram> {
+    // Update user program to be inactive and mark as unsubscribed
+    const [updatedUserProgram] = await db
+      .update(userPrograms)
+      .set({ 
+        isActive: false,
+        unsubscribedAt: new Date()
+      })
+      .where(eq(userPrograms.id, userProgramId))
+      .returning();
+    
+    if (!updatedUserProgram) {
+      throw new Error('User program not found');
+    }
+    
+    // Delete all scheduled workouts for this program
+    await this.deleteScheduledWorkoutsForProgram(updatedUserProgram.userId, updatedUserProgram.programId);
+    
+    return updatedUserProgram;
+  }
+  
+  // Scheduled Workout methods
+  async getScheduledWorkouts(userId: number): Promise<ScheduledWorkout[]> {
+    return db
+      .select()
+      .from(scheduledWorkouts)
+      .where(eq(scheduledWorkouts.userId, userId))
+      .orderBy(scheduledWorkouts.scheduledDate);
+  }
+  
+  async getScheduledWorkoutsByDate(userId: number, date: Date): Promise<ScheduledWorkout[]> {
+    // Convert date to ISO string format without time (YYYY-MM-DD)
+    const dateString = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      .toISOString().split('T')[0];
+    
+    // Use SQL to compare just the date portion
+    return db
+      .select()
+      .from(scheduledWorkouts)
+      .where(and(
+        eq(scheduledWorkouts.userId, userId),
+        sql`DATE(${scheduledWorkouts.scheduledDate}) = ${dateString}`
+      ));
+  }
+  
+  async getScheduledWorkoutsByDateRange(userId: number, startDate: Date, endDate: Date): Promise<ScheduledWorkout[]> {
+    // Convert dates to ISO string format without time (YYYY-MM-DD)
+    const startDateString = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())
+      .toISOString().split('T')[0];
+    const endDateString = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+      .toISOString().split('T')[0];
+    
+    // Use SQL to compare date ranges
+    return db
+      .select()
+      .from(scheduledWorkouts)
+      .where(and(
+        eq(scheduledWorkouts.userId, userId),
+        sql`DATE(${scheduledWorkouts.scheduledDate}) >= ${startDateString}`,
+        sql`DATE(${scheduledWorkouts.scheduledDate}) <= ${endDateString}`
+      ))
+      .orderBy(scheduledWorkouts.scheduledDate);
+  }
+  
+  async addScheduledWorkout(scheduledWorkout: InsertScheduledWorkout): Promise<ScheduledWorkout> {
+    const [newScheduledWorkout] = await db
+      .insert(scheduledWorkouts)
+      .values({
+        ...scheduledWorkout,
+        is_completed: scheduledWorkout.is_completed || false,
+        created_at: new Date()
+      })
+      .returning();
+    
+    return newScheduledWorkout;
+  }
+  
+  async markScheduledWorkoutCompleted(id: number, isCompleted: boolean): Promise<ScheduledWorkout> {
+    const [updatedWorkout] = await db
+      .update(scheduledWorkouts)
+      .set({ is_completed: isCompleted })
+      .where(eq(scheduledWorkouts.id, id))
+      .returning();
+    
+    if (!updatedWorkout) {
+      throw new Error('Scheduled workout not found');
+    }
+    
+    return updatedWorkout;
+  }
+  
+  async deleteScheduledWorkoutsForProgram(userId: number, programId: number): Promise<void> {
+    await db
+      .delete(scheduledWorkouts)
+      .where(and(
+        eq(scheduledWorkouts.userId, userId),
+        eq(scheduledWorkouts.programId, programId)
+      ));
   }
 
   // Completed Workout methods
