@@ -228,6 +228,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({ message: 'Invalid request data' });
     }
   });
+  
+  // Program endpoints
+  // Get all programs (no auth required - public endpoint)
+  apiRouter.get('/programs', async (req: Request, res: Response) => {
+    try {
+      const programs = await storage.getPrograms();
+      res.json(programs);
+    } catch (error) {
+      console.error('Error getting programs:', error);
+      res.status(500).json({ message: 'Failed to fetch programs' });
+    }
+  });
+  
+  // Get a specific program with its associated workouts
+  apiRouter.get('/programs/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const programWithWorkouts = await storage.getProgramWithWorkouts(id);
+      res.json(programWithWorkouts);
+    } catch (error) {
+      console.error('Error getting program:', error);
+      res.status(404).json({ message: 'Program not found' });
+    }
+  });
+  
+  // Add a new program (admin endpoint in real application)
+  apiRouter.post('/programs', async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertProgramSchema.parse(req.body);
+      const program = await storage.addProgram(validatedData);
+      res.status(201).json(program);
+    } catch (error) {
+      console.error('Error adding program:', error);
+      res.status(400).json({ message: 'Invalid request data' });
+    }
+  });
+  
+  // Add a workout to a program (admin endpoint in real application)
+  apiRouter.post('/programs/:programId/workouts', async (req: Request, res: Response) => {
+    try {
+      const programId = parseInt(req.params.programId);
+      const validatedData = insertProgramWorkoutSchema.parse({
+        ...req.body,
+        programId
+      });
+      const programWorkout = await storage.addProgramWorkout(validatedData);
+      res.status(201).json(programWorkout);
+    } catch (error) {
+      console.error('Error adding workout to program:', error);
+      res.status(400).json({ message: 'Invalid request data' });
+    }
+  });
 
   // Mount the API router
   app.use('/api', apiRouter);

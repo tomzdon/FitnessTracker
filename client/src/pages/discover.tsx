@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { getQueryFn } from '@/lib/queryClient';
+import { Program, Workout } from '@shared/schema';
 
 // Content categories
 const categories = [
@@ -13,39 +16,82 @@ const categories = [
   { id: 'knowledge', name: 'Knowledge' },
 ];
 
-// Mock workout data
-const workouts = [
-  {
-    id: 1,
-    type: 'program',
-    day: 22,
-    totalDays: 50,
-    title: 'MAX program day 22',
-    subtitle: "LET'S NOT MAKE THESE ISOLATION EXERCISES A COMPOUND",
-    duration: 38, // in minutes
-    backgroundImage: 'https://source.unsplash.com/random/600x800/?fitness-woman-1'
-  },
-  {
-    id: 2,
-    type: 'program',
-    day: 21,
-    totalDays: 50,
-    title: 'MAX program day 21',
-    subtitle: 'ONE ISOLATION AMID THE COMPOUNDS!',
-    duration: 37, // in minutes
-    backgroundImage: 'https://source.unsplash.com/random/600x800/?fitness-woman-2'
-  },
-  {
-    id: 3,
-    type: 'knowledge',
-    title: 'MAX HQ - Week 5',
-    date: 'MAY 03, 2025',
-    backgroundImage: 'https://source.unsplash.com/random/600x800/?fitness-collage'
-  }
-];
-
 export default function Discover() {
   const [activeCategory, setActiveCategory] = useState('all');
+
+  // Fetch workouts
+  const workoutsQuery = useQuery<Workout[]>({
+    queryKey: ['/api/workouts'],
+    queryFn: getQueryFn({ on401: 'returnNull' }),
+  });
+
+  // Fetch programs
+  const programsQuery = useQuery<Program[]>({
+    queryKey: ['/api/programs'],
+    queryFn: getQueryFn({ on401: 'returnNull' }),
+  });
+
+  // Loading state
+  const isLoading = workoutsQuery.isLoading || programsQuery.isLoading;
+  const hasError = workoutsQuery.error || programsQuery.error;
+
+  // Filter content based on active category
+  let displayContent: any[] = [];
+  
+  if (workoutsQuery.data && programsQuery.data) {
+    if (activeCategory === 'all') {
+      // Combine all content types
+      displayContent = [
+        ...programsQuery.data.map(program => ({
+          id: `program-${program.id}`,
+          type: 'program',
+          title: program.title,
+          subtitle: program.description,
+          imageUrl: program.imageUrl || 'https://source.unsplash.com/random/600x800/?fitness',
+          totalDays: 30, // Default value for now
+          day: 1, // Default value for now
+          duration: 45, // Default value for now
+        })),
+        ...workoutsQuery.data.map(workout => ({
+          id: `workout-${workout.id}`,
+          type: 'workout',
+          title: workout.title,
+          subtitle: workout.subtitle,
+          imageUrl: workout.imageUrl || 'https://source.unsplash.com/random/600x800/?workout',
+          day: workout.day,
+          totalDays: workout.totalDays,
+          duration: workout.duration || 30, // Default value if duration not provided
+        }))
+      ];
+    } else if (activeCategory === 'programs') {
+      // Show only programs
+      displayContent = programsQuery.data.map(program => ({
+        id: `program-${program.id}`,
+        type: 'program',
+        title: program.title,
+        subtitle: program.description,
+        imageUrl: program.imageUrl || 'https://source.unsplash.com/random/600x800/?fitness-program',
+        totalDays: 30, // Default value for now
+        day: 1, // Default value for now
+        duration: 45, // Default value for now
+      }));
+    } else if (activeCategory === 'workouts') {
+      // Show only workouts
+      displayContent = workoutsQuery.data.map(workout => ({
+        id: `workout-${workout.id}`,
+        type: 'workout',
+        title: workout.title,
+        subtitle: workout.subtitle,
+        imageUrl: workout.imageUrl || 'https://source.unsplash.com/random/600x800/?workout-fitness',
+        day: workout.day,
+        totalDays: workout.totalDays,
+        duration: workout.duration || 30, // Default value if duration not provided
+      }));
+    } else {
+      // Other categories would have their own logic here
+      displayContent = [];
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-6">
@@ -93,69 +139,97 @@ export default function Discover() {
 
       {/* Newest content section */}
       <div className="mb-10">
-        <h2 className="text-xl font-semibold mb-5">Newest content</h2>
+        <h2 className="text-xl font-semibold mb-5">
+          {activeCategory === 'all' ? 'Newest content' : 
+           activeCategory === 'programs' ? 'Programs' : 
+           activeCategory === 'workouts' ? 'Workouts' : 
+           'Content'}
+        </h2>
         
-        <div className="relative">
-          {/* Carousel/Content cards */}
-          <div className="flex overflow-x-auto pb-4 space-x-4 -mx-1 px-1 hide-scrollbar">
-            {workouts.map((workout) => (
-              <div 
-                key={workout.id} 
-                className="flex-shrink-0 w-[280px] md:w-[320px] rounded-lg overflow-hidden relative"
-              >
+        {isLoading && (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+          </div>
+        )}
+        
+        {hasError && (
+          <div className="text-center py-8 text-red-500">
+            Failed to load content. Please try again later.
+          </div>
+        )}
+        
+        {!isLoading && !hasError && displayContent.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            No content available in this category.
+          </div>
+        )}
+        
+        {!isLoading && !hasError && displayContent.length > 0 && (
+          <div className="relative">
+            {/* Carousel/Content cards */}
+            <div className="flex overflow-x-auto pb-4 space-x-4 -mx-1 px-1 hide-scrollbar">
+              {displayContent.map((item) => (
                 <div 
-                  className="aspect-[3/4] relative group cursor-pointer"
-                  style={{
-                    backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6)), url(${workout.backgroundImage})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }}
+                  key={item.id} 
+                  className="flex-shrink-0 w-[280px] md:w-[320px] rounded-lg overflow-hidden relative"
                 >
-                  {/* Top badge */}
-                  <div className="absolute top-4 left-4 right-4 flex justify-between">
-                    <div className="bg-white text-black text-xs font-bold px-2 py-1 rounded-full">
-                      {workout.type === 'knowledge' ? 'KNOWLEDGE' : `DAY ${workout.day}/${workout.totalDays}`}
+                  <div 
+                    className="aspect-[3/4] relative group cursor-pointer"
+                    style={{
+                      backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6)), url(${item.imageUrl})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
+                  >
+                    {/* Top badge */}
+                    <div className="absolute top-4 left-4 right-4 flex justify-between">
+                      <div className="bg-white text-black text-xs font-bold px-2 py-1 rounded-full">
+                        {item.type === 'program' ? 'PROGRAM' : 
+                         item.day && item.totalDays ? `DAY ${item.day}/${item.totalDays}` : 
+                         'WORKOUT'}
+                      </div>
+                      
+                      <button className="bg-white bg-opacity-20 rounded-full p-1 text-white">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                        </svg>
+                      </button>
                     </div>
                     
-                    <button className="bg-white bg-opacity-20 rounded-full p-1 text-white">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                      </svg>
-                    </button>
-                  </div>
-                  
-                  {/* Bottom content */}
-                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                    <h3 className="text-xl font-bold mb-1">{workout.title}</h3>
-                    {workout.subtitle && (
-                      <p className="text-xs text-gray-200 uppercase tracking-wider mb-2">
-                        {workout.subtitle}
-                      </p>
-                    )}
-                    {workout.date && (
-                      <p className="text-xs text-gray-200 mb-2">
-                        {workout.date}
-                      </p>
-                    )}
-                    {workout.duration && (
-                      <div className="flex items-center mt-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                        </svg>
-                        <span className="text-sm">{workout.duration} MIN</span>
-                      </div>
-                    )}
+                    {/* Bottom content */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                      <h3 className="text-xl font-bold mb-1">{item.title}</h3>
+                      {item.subtitle && (
+                        <p className="text-xs text-gray-200 uppercase tracking-wider mb-2">
+                          {item.subtitle}
+                        </p>
+                      )}
+                      {item.date && (
+                        <p className="text-xs text-gray-200 mb-2">
+                          {item.date}
+                        </p>
+                      )}
+                      {item.duration && (
+                        <div className="flex items-center mt-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                          </svg>
+                          <span className="text-sm">{item.duration} MIN</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            
-            {/* Next button */}
-            <button className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white rounded-full shadow-lg p-3 focus:outline-none">
-              <ChevronRight className="h-5 w-5" />
-            </button>
+              ))}
+              
+              {displayContent.length > 3 && (
+                <button className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white rounded-full shadow-lg p-3 focus:outline-none">
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
