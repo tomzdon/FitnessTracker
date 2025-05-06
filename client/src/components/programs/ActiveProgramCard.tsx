@@ -46,8 +46,17 @@ export function ActiveProgramCard() {
   
   // Update program progress mutation
   const updateProgramMutation = useMutation({
-    mutationFn: async ({ id, currentDay }: { id: number, currentDay: number }) => {
-      const res = await apiRequest("PUT", `/api/user-programs/${id}`, { currentDay });
+    mutationFn: async ({ id, currentDay, isActive, completedAt }: { 
+      id: number, 
+      currentDay: number,
+      isActive?: boolean,
+      completedAt?: string 
+    }) => {
+      const res = await apiRequest("PUT", `/api/user-programs/${id}`, { 
+        currentDay, 
+        isActive, 
+        completedAt 
+      });
       return await res.json();
     },
     onSuccess: () => {
