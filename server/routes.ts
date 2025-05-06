@@ -19,6 +19,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API routes
   const apiRouter = express.Router();
   
+  // Get current user endpoint
+  apiRouter.get('/me', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.json(user);
+    } catch (error) {
+      console.error('Error getting user:', error);
+      res.status(500).json({ message: 'Failed to fetch user data' });
+    }
+  });
+  
+  // Update user endpoint
+  apiRouter.put('/me', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      // Only allow updating certain fields
+      const { username, email } = req.body;
+      
+      // Check if username already exists
+      if (username && username !== req.user!.username) {
+        const existingUser = await storage.getUserByUsername(username);
+        if (existingUser && existingUser.id !== userId) {
+          return res.status(400).json({ message: 'Username already taken' });
+        }
+      }
+      
+      // Update the user
+      const updatedUser = await storage.updateUser(userId, { username, email });
+      
+      // Update the session user data
+      req.user = updatedUser;
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error('Error updating user:', error);
+      res.status(500).json({ message: 'Failed to update user data' });
+    }
+  });
+  
   // Get statistics
   apiRouter.get('/statistics', isAuthenticated, async (req: Request, res: Response) => {
     try {

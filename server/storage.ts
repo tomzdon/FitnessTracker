@@ -10,6 +10,7 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, userData: { username?: string, email?: string }): Promise<User>;
   
   // Workout methods
   getWorkouts(): Promise<Workout[]>;
@@ -117,6 +118,22 @@ export class MemStorage implements IStorage {
     };
     this.users.set(id, user);
     return user;
+  }
+  
+  async updateUser(id: number, userData: { username?: string, email?: string }): Promise<User> {
+    const existingUser = await this.getUser(id);
+    if (!existingUser) {
+      throw new Error('User not found');
+    }
+    
+    const updatedUser: User = {
+      ...existingUser,
+      username: userData.username || existingUser.username,
+      email: userData.email !== undefined ? userData.email : existingUser.email
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
   
   // Workout methods
