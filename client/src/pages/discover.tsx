@@ -93,6 +93,7 @@ export default function Discover() {
           type: 'workout',
           title: workout.title,
           subtitle: workout.subtitle,
+          description: workout.description,
           imageUrl: workout.imageUrl || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop',
           day: workout.day,
           totalDays: workout.totalDays,
@@ -106,6 +107,7 @@ export default function Discover() {
         type: 'program',
         title: program.title,
         subtitle: program.description,
+        description: program.description,
         imageUrl: program.imageUrl || 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=1000&auto=format&fit=crop',
         totalDays: program.duration,
         day: 1, // Default value for now
@@ -118,6 +120,7 @@ export default function Discover() {
         type: 'workout',
         title: workout.title,
         subtitle: workout.subtitle,
+        description: workout.description,
         imageUrl: workout.imageUrl || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop',
         day: workout.day,
         totalDays: workout.totalDays,
@@ -205,57 +208,11 @@ export default function Discover() {
             {/* Carousel/Content cards */}
             <div className="flex overflow-x-auto pb-4 space-x-4 -mx-1 px-1 hide-scrollbar">
               {displayContent.map((item) => (
-                <div 
-                  key={item.id} 
-                  className="flex-shrink-0 w-[280px] md:w-[320px] rounded-lg overflow-hidden relative"
-                >
-                  <div 
-                    className="aspect-[3/4] relative group cursor-pointer"
-                    style={{
-                      backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6)), url(${item.imageUrl})`,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center'
-                    }}
-                  >
-                    {/* Top badge */}
-                    <div className="absolute top-4 left-4 right-4 flex justify-between">
-                      <div className="bg-white text-black text-xs font-bold px-2 py-1 rounded-full">
-                        {item.type === 'program' ? 'PROGRAM' : 
-                         item.day && item.totalDays ? `DAY ${item.day}/${item.totalDays}` : 
-                         'WORKOUT'}
-                      </div>
-                      
-                      <button className="bg-white bg-opacity-20 rounded-full p-1 text-white">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                        </svg>
-                      </button>
-                    </div>
-                    
-                    {/* Bottom content */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                      <h3 className="text-xl font-bold mb-1">{item.title}</h3>
-                      {item.subtitle && (
-                        <p className="text-xs text-gray-200 uppercase tracking-wider mb-2">
-                          {item.subtitle}
-                        </p>
-                      )}
-                      {item.date && (
-                        <p className="text-xs text-gray-200 mb-2">
-                          {item.date}
-                        </p>
-                      )}
-                      {item.duration && (
-                        <div className="flex items-center mt-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                          </svg>
-                          <span className="text-sm">{item.duration} MIN</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                <WorkoutPreviewCard 
+                  key={item.id}
+                  workout={item}
+                  onClick={() => handleWorkoutClick(item)}
+                />
               ))}
               
               {displayContent.length > 3 && (
@@ -267,6 +224,14 @@ export default function Discover() {
           </div>
         )}
       </div>
+      
+      {/* Workout Preview Modal */}
+      <WorkoutPreviewModal 
+        workout={selectedWorkout}
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        onStartWorkout={handleStartWorkout}
+      />
     </div>
   );
 }
