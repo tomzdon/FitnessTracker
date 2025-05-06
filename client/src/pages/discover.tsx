@@ -115,7 +115,13 @@ export default function Discover() {
     workoutsContent = fallbackWorkouts.map(workout => ({
       id: `workout-${workout.id}`,
       type: 'workout',
-      ...workout
+      title: workout.title,
+      subtitle: workout.subtitle,
+      description: workout.description,
+      imageUrl: workout.imageUrl,
+      duration: workout.duration,
+      totalDays: workout.totalDays,
+      day: workout.day
     }));
   }
   

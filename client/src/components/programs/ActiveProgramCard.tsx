@@ -134,7 +134,9 @@ export function ActiveProgramCard() {
     );
   }
 
+  // Fallback for when there's an error or no data
   if (error || !data) {
+    // Return a card that prompts to browse programs
     return (
       <Card>
         <CardHeader className="pb-2">
