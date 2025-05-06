@@ -154,8 +154,10 @@ export default function AuthPage() {
                   </Form>
                 </CardContent>
                 <CardFooter className="flex justify-center">
-                  <div className="text-sm text-muted-foreground">
-                    Don't have an account? <Link href="/register" className="pl-1 underline">Register</Link>
+                  <div className="text-center">
+                    <Link href="/register" className="text-sm text-primary font-medium hover:underline">
+                      Try our new step-by-step registration →
+                    </Link>
                   </div>
                 </CardFooter>
               </Card>
@@ -267,10 +269,7 @@ export default function AuthPage() {
                     </form>
                   </Form>
                 </CardContent>
-                <CardFooter className="flex flex-col gap-4 justify-center">
-                  <div className="text-sm text-center text-muted-foreground">
-                    Already have an account? <button onClick={() => (document.querySelector('[data-value="login"]') as HTMLElement)?.click()} className="pl-1 underline">Login</button>
-                  </div>
+                <CardFooter className="flex justify-center">
                   <div className="text-center">
                     <Link href="/register" className="text-sm text-primary font-medium hover:underline">
                       Try our new step-by-step registration →
