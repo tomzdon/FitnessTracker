@@ -620,6 +620,96 @@ export class DatabaseStorage implements IStorage {
   async removeFavorite(id: number): Promise<void> {
     await db.delete(favorites).where(eq(favorites.id, id));
   }
+  
+  // User-Program methods
+  async getUserPrograms(userId: number): Promise<UserProgram[]> {
+    return db
+      .select()
+      .from(userPrograms)
+      .where(eq(userPrograms.userId, userId))
+      .orderBy(desc(userPrograms.createdAt));
+  }
+  
+  async getActiveUserProgram(userId: number): Promise<{userProgram: UserProgram, program: Program, workouts: Workout[]} | undefined> {
+    // Find active user program
+    const [activeUserProgram] = await db
+      .select()
+      .from(userPrograms)
+      .where(and(
+        eq(userPrograms.userId, userId),
+        eq(userPrograms.isActive, true)
+      ));
+      
+    if (!activeUserProgram) {
+      return undefined;
+    }
+    
+    // Get program details
+    const [program] = await db
+      .select()
+      .from(programs)
+      .where(eq(programs.id, activeUserProgram.programId));
+      
+    if (!program) {
+      return undefined;
+    }
+    
+    // Get workouts for the program
+    const { workouts } = await this.getProgramWithWorkouts(program.id);
+    
+    return {
+      userProgram: activeUserProgram,
+      program,
+      workouts
+    };
+  }
+  
+  async assignUserProgram(insertUserProgram: InsertUserProgram): Promise<UserProgram> {
+    // First, deactivate any active programs for this user
+    await db
+      .update(userPrograms)
+      .set({ isActive: false })
+      .where(and(
+        eq(userPrograms.userId, insertUserProgram.userId),
+        eq(userPrograms.isActive, true)
+      ));
+    
+    // Create new user program
+    const [newUserProgram] = await db
+      .insert(userPrograms)
+      .values({
+        ...insertUserProgram,
+        startDate: new Date(),
+        currentDay: insertUserProgram.currentDay || 1,
+        isActive: insertUserProgram.isActive !== undefined ? insertUserProgram.isActive : true,
+        completedAt: insertUserProgram.completedAt || null,
+        createdAt: new Date()
+      })
+      .returning();
+      
+    return newUserProgram;
+  }
+  
+  async updateUserProgramProgress(id: number, data: { currentDay?: number, isActive?: boolean, completedAt?: Date }): Promise<UserProgram> {
+    // Build update object with only the fields that are provided
+    const updateData: Partial<UserProgram> = {};
+    if (data.currentDay !== undefined) updateData.currentDay = data.currentDay;
+    if (data.isActive !== undefined) updateData.isActive = data.isActive;
+    if (data.completedAt !== undefined) updateData.completedAt = data.completedAt;
+    
+    // Update the user program in the database
+    const [updatedUserProgram] = await db
+      .update(userPrograms)
+      .set(updateData)
+      .where(eq(userPrograms.id, id))
+      .returning();
+      
+    if (!updatedUserProgram) {
+      throw new Error('User program not found');
+    }
+    
+    return updatedUserProgram;
+  }
 
   // Completed Workout methods
   async getCompletedWorkouts(userId: number): Promise<CompletedWorkout[]> {

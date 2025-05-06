@@ -1,7 +1,7 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertFavoriteSchema, insertWorkoutSchema, insertProgramSchema, insertProgramWorkoutSchema } from "@shared/schema";
+import { insertFavoriteSchema, insertWorkoutSchema, insertProgramSchema, insertProgramWorkoutSchema, insertUserProgramSchema } from "@shared/schema";
 import { setupAuth } from "./auth";
 
 // Middleware to check if user is authenticated
@@ -278,6 +278,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error adding workout to program:', error);
       res.status(400).json({ message: 'Invalid request data' });
+    }
+  });
+
+  // User-Program endpoints
+  apiRouter.get('/user-programs', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const userPrograms = await storage.getUserPrograms(userId);
+      res.json(userPrograms);
+    } catch (error) {
+      console.error('Error getting user programs:', error);
+      res.status(500).json({ message: 'Failed to fetch user programs' });
+    }
+  });
+  
+  apiRouter.get('/active-program', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const activeProgram = await storage.getActiveUserProgram(userId);
+      
+      if (!activeProgram) {
+        return res.status(404).json({ message: 'No active program found' });
+      }
+      
+      res.json(activeProgram);
+    } catch (error) {
+      console.error('Error getting active program:', error);
+      res.status(500).json({ message: 'Failed to fetch active program' });
+    }
+  });
+  
+  apiRouter.post('/programs/:programId/assign', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const programId = parseInt(req.params.programId);
+      const userId = req.user!.id;
+      
+      // Check if program exists
+      const program = await storage.getProgram(programId);
+      if (!program) {
+        return res.status(404).json({ message: 'Program not found' });
+      }
+      
+      const userProgram = await storage.assignUserProgram({
+        userId,
+        programId,
+        currentDay: 1,
+        isActive: true
+      });
+      
+      res.status(201).json(userProgram);
+    } catch (error) {
+      console.error('Error assigning program:', error);
+      res.status(500).json({ message: 'Failed to assign program to user' });
+    }
+  });
+  
+  apiRouter.put('/user-programs/:id', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { currentDay, isActive, completedAt } = req.body;
+      
+      const updatedUserProgram = await storage.updateUserProgramProgress(
+        id,
+        { 
+          currentDay: currentDay !== undefined ? parseInt(currentDay) : undefined, 
+          isActive: isActive !== undefined ? Boolean(isActive) : undefined, 
+          completedAt: completedAt ? new Date(completedAt) : undefined 
+        }
+      );
+      
+      res.json(updatedUserProgram);
+    } catch (error) {
+      console.error('Error updating user program:', error);
+      res.status(500).json({ message: 'Failed to update user program' });
     }
   });
 
