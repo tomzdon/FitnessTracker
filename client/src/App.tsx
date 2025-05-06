@@ -12,6 +12,7 @@ import Profile from "@/pages/profile";
 import AuthPage from "@/pages/auth-page";
 import RegisterPage from "@/pages/register-page";
 import ProgramDetail from "@/pages/program-detail";
+import WorkoutDetailPage from "@/pages/workout-detail";
 import Header from "@/components/layout/Header";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import { BackToTop } from "@/components/ui/back-to-top";
@@ -27,6 +28,7 @@ function AppRoutes() {
       <ProtectedRoute path="/favorites" component={Favorites} />
       <ProtectedRoute path="/profile" component={Profile} />
       <ProtectedRoute path="/programs/:id" component={ProgramDetail} />
+      <ProtectedRoute path="/workout/:id" component={WorkoutDetailPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/register" component={RegisterPage} />
       <Route component={NotFound} />
