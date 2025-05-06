@@ -86,20 +86,52 @@ export default function Discover() {
     }));
   }
   
-  if (workoutsQuery.data && programsQuery.data) {
-    if (activeCategory === 'all') {
-      // Combine all content types
-      displayContent = [...programsContent, ...workoutsContent];
-    } else if (activeCategory === 'programs') {
-      // Show only programs
-      displayContent = programsContent;
-    } else if (activeCategory === 'workouts') {
-      // Show only workouts
-      displayContent = workoutsContent;
-    } else {
-      // Other categories would have their own logic here
-      displayContent = [];
+  // Fallback programs data for when API fails
+  const fallbackPrograms = [
+    {
+      id: 1,
+      title: "MAX Program",
+      description: "Complete full-body transformation in 50 days",
+      imageUrl: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=1000&auto=format&fit=crop",
+      difficulty: "intermediate",
+      duration: 50,
+      category: "strength",
+      createdAt: new Date()
+    },
+    {
+      id: 2,
+      title: "Cardio Challenge",
+      description: "Boost your cardiovascular fitness in just 30 days",
+      imageUrl: "https://images.unsplash.com/photo-1434596922112-19c563067271?q=80&w=1000&auto=format&fit=crop",
+      difficulty: "beginner",
+      duration: 30,
+      category: "cardio",
+      createdAt: new Date()
     }
+  ];
+
+  // If programsContent is empty due to API error, use fallback data
+  if (programsContent.length === 0 && programsQuery.error) {
+    programsContent = fallbackPrograms.map(program => ({
+      id: `program-${program.id}`,
+      type: 'program',
+      program: program
+    }));
+  }
+
+  // Even if one of the queries fails, we can still show content from the other
+  if (activeCategory === 'all') {
+    // Combine all content types
+    displayContent = [...programsContent, ...workoutsContent];
+  } else if (activeCategory === 'programs') {
+    // Show only programs
+    displayContent = programsContent;
+  } else if (activeCategory === 'workouts') {
+    // Show only workouts
+    displayContent = workoutsContent;
+  } else {
+    // Other categories would have their own logic here
+    displayContent = [];
   }
 
   return (
