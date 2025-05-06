@@ -279,54 +279,25 @@ export default function WorkoutDetailCard({
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="p-4 space-y-4">
-            {displayExercises.map((exercise, index) => (
-              <div key={exercise.id} className="rounded-lg border overflow-hidden">
-                <div className="px-4 py-3 bg-white flex justify-between items-center">
-                  <div className="flex items-center">
-                    <h4 className="font-semibold text-base">{exercise.name}</h4>
-                    <div className="ml-3 text-gray-500 text-sm font-medium">
+          <div className="px-4 pt-2 pb-4 max-h-[500px] overflow-y-auto">
+            <div className="space-y-4">
+              {displayExercises.map((exercise, index) => (
+                <div key={exercise.id} className="rounded-lg border overflow-hidden">
+                  <div className="p-4 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-semibold text-base">{exercise.name}</h4>
+                      <div className="text-sm text-gray-600 mt-1">
+                        {exercise.sets} sets × {exercise.reps} {exercise.reps === 1 ? 'rep' : 'reps'}
+                        {exercise.weight ? ` (${exercise.weight}kg)` : ''}
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-500 font-medium">
                       {index + 1}/{displayExercises.length}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium">
-                      {exercise.sets} sets × {exercise.reps} {exercise.reps === 1 ? 'rep' : 'reps'}
-                      {exercise.weight ? ` (${exercise.weight}kg)` : ''}
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      Rest: {exercise.restTime} sec
-                    </div>
-                  </div>
                 </div>
-                
-                {exercise.description && (
-                  <div className="px-4 py-2 bg-gray-50 border-y text-sm text-gray-600">
-                    {exercise.description}
-                  </div>
-                )}
-                
-                <div className="px-4 py-3 flex justify-between items-center">
-                  <div className="flex space-x-2">
-                    {Array.from({ length: exercise.sets }).map((_, setIndex) => (
-                      <Button 
-                        key={setIndex} 
-                        variant={isSetCompleted(exercise.id, setIndex) ? "default" : "outline"}
-                        size="sm" 
-                        className={`h-8 w-8 p-0 ${isSetCompleted(exercise.id, setIndex) ? 'bg-green-600 hover:bg-green-700' : ''}`}
-                        onClick={() => markSetCompleted(exercise.id, setIndex)}
-                      >
-                        {setIndex + 1}
-                      </Button>
-                    ))}
-                  </div>
-                  
-                  <div className="text-sm font-medium">
-                    {completedSets[exercise.id]?.size || 0}/{exercise.sets}
-                  </div>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </CollapsibleContent>
       </Collapsible>
