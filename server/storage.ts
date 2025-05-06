@@ -28,6 +28,13 @@ export interface IStorage {
   getWorkout(id: number): Promise<Workout | undefined>;
   addWorkout(workout: InsertWorkout): Promise<Workout>;
   
+  // Program methods
+  getPrograms(): Promise<Program[]>;
+  getProgram(id: number): Promise<Program | undefined>;
+  getProgramWithWorkouts(id: number): Promise<{program: Program, workouts: Workout[]}>;
+  addProgram(program: InsertProgram): Promise<Program>;
+  addProgramWorkout(programWorkout: InsertProgramWorkout): Promise<ProgramWorkout>;
+  
   // Favorite methods
   getFavorites(userId: number): Promise<Workout[]>;
   addFavorite(favorite: InsertFavorite): Promise<Favorite>;
@@ -51,6 +58,8 @@ export interface IStorage {
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private workouts: Map<number, Workout>;
+  private programs: Map<number, Program>;
+  private programWorkouts: Map<number, ProgramWorkout>;
   private favorites: Map<number, Favorite>;
   private completedWorkouts: Map<number, CompletedWorkout>;
   private progressTests: Map<number, ProgressTest>;
@@ -59,6 +68,8 @@ export class MemStorage implements IStorage {
   
   private userIdCounter: number;
   private workoutIdCounter: number;
+  private programIdCounter: number;
+  private programWorkoutIdCounter: number;
   private favoriteIdCounter: number;
   private completedWorkoutIdCounter: number;
   private progressTestIdCounter: number;
@@ -66,12 +77,16 @@ export class MemStorage implements IStorage {
   constructor() {
     this.users = new Map();
     this.workouts = new Map();
+    this.programs = new Map();
+    this.programWorkouts = new Map();
     this.favorites = new Map();
     this.completedWorkouts = new Map();
     this.progressTests = new Map();
     
     this.userIdCounter = 1;
     this.workoutIdCounter = 1;
+    this.programIdCounter = 1;
+    this.programWorkoutIdCounter = 1;
     this.favoriteIdCounter = 1;
     this.completedWorkoutIdCounter = 1;
     this.progressTestIdCounter = 1;
@@ -190,6 +205,62 @@ export class MemStorage implements IStorage {
     };
     this.workouts.set(id, workout);
     return workout;
+  }
+  
+  // Program methods
+  async getPrograms(): Promise<Program[]> {
+    return Array.from(this.programs.values());
+  }
+  
+  async getProgram(id: number): Promise<Program | undefined> {
+    return this.programs.get(id);
+  }
+  
+  async getProgramWithWorkouts(id: number): Promise<{program: Program, workouts: Workout[]}> {
+    const program = this.programs.get(id);
+    if (!program) {
+      throw new Error('Program not found');
+    }
+    
+    // Get all program workouts for this program
+    const programWorkoutEntries = Array.from(this.programWorkouts.values())
+      .filter(pw => pw.programId === id)
+      .sort((a, b) => a.day - b.day); // Sort by day
+    
+    // Get the actual workouts
+    const workoutsForProgram = programWorkoutEntries
+      .map(pw => this.workouts.get(pw.workoutId)!)
+      .filter(Boolean);
+    
+    return {
+      program,
+      workouts: workoutsForProgram
+    };
+  }
+  
+  async addProgram(insertProgram: InsertProgram): Promise<Program> {
+    const id = this.programIdCounter++;
+    const program: Program = {
+      ...insertProgram,
+      id,
+      description: insertProgram.description || null,
+      imageUrl: insertProgram.imageUrl || null,
+      category: insertProgram.category || null,
+      createdAt: new Date()
+    };
+    this.programs.set(id, program);
+    return program;
+  }
+  
+  async addProgramWorkout(insertProgramWorkout: InsertProgramWorkout): Promise<ProgramWorkout> {
+    const id = this.programWorkoutIdCounter++;
+    const programWorkout: ProgramWorkout = {
+      ...insertProgramWorkout,
+      id,
+      createdAt: new Date()
+    };
+    this.programWorkouts.set(id, programWorkout);
+    return programWorkout;
   }
   
   // Favorite methods
@@ -373,6 +444,67 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return workout;
+  }
+  
+  // Program methods
+  async getPrograms(): Promise<Program[]> {
+    return db.select().from(programs).orderBy(desc(programs.createdAt));
+  }
+  
+  async getProgram(id: number): Promise<Program | undefined> {
+    const [program] = await db.select().from(programs).where(eq(programs.id, id));
+    return program;
+  }
+  
+  async getProgramWithWorkouts(id: number): Promise<{program: Program, workouts: Workout[]}> {
+    // Get the program
+    const [program] = await db.select().from(programs).where(eq(programs.id, id));
+    if (!program) {
+      throw new Error('Program not found');
+    }
+    
+    // Get workouts related to this program
+    const programWorkoutEntries = await db
+      .select({
+        pw: programWorkouts,
+        workout: workouts
+      })
+      .from(programWorkouts)
+      .innerJoin(workouts, eq(programWorkouts.workoutId, workouts.id))
+      .where(eq(programWorkouts.programId, id))
+      .orderBy(programWorkouts.day);
+    
+    const workoutsForProgram = programWorkoutEntries.map(entry => entry.workout);
+    
+    return {
+      program,
+      workouts: workoutsForProgram
+    };
+  }
+  
+  async addProgram(insertProgram: InsertProgram): Promise<Program> {
+    const [program] = await db
+      .insert(programs)
+      .values({
+        ...insertProgram,
+        description: insertProgram.description || null,
+        imageUrl: insertProgram.imageUrl || null,
+        category: insertProgram.category || null,
+        createdAt: new Date()
+      })
+      .returning();
+    return program;
+  }
+  
+  async addProgramWorkout(insertProgramWorkout: InsertProgramWorkout): Promise<ProgramWorkout> {
+    const [programWorkout] = await db
+      .insert(programWorkouts)
+      .values({
+        ...insertProgramWorkout,
+        createdAt: new Date()
+      })
+      .returning();
+    return programWorkout;
   }
 
   // Favorite methods

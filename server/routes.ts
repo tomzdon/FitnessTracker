@@ -1,7 +1,7 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertFavoriteSchema, insertWorkoutSchema } from "@shared/schema";
+import { insertFavoriteSchema, insertWorkoutSchema, insertProgramSchema, insertProgramWorkoutSchema } from "@shared/schema";
 import { setupAuth } from "./auth";
 
 // Middleware to check if user is authenticated
