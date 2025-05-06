@@ -2,6 +2,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Workout } from "@shared/schema";
+import { FavoriteButton } from "@/components/workouts/FavoriteButton";
+import { useQuery } from "@tanstack/react-query";
 
 interface WorkoutPreviewModalProps {
   workout: {
@@ -27,6 +29,19 @@ export function WorkoutPreviewModal({
   onStartWorkout 
 }: WorkoutPreviewModalProps) {
   if (!workout) return null;
+  
+  // Check if this workout is already a favorite
+  const { data: favorites = [] } = useQuery<any[]>({
+    queryKey: ['/api/favourites'],
+  });
+  
+  // Extract the numeric ID from the workout.id (which could be a string like "workout-5")
+  const workoutId = typeof workout.id === 'string' && workout.id.includes('-') 
+    ? parseInt(workout.id.split('-')[1]) 
+    : Number(workout.id);
+  
+  // Check if this workout is in favorites
+  const isFavorite = favorites.some(favorite => favorite.id === workoutId);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -133,10 +148,16 @@ export function WorkoutPreviewModal({
           </div>
           
           {/* Action buttons */}
-          <div className="flex justify-between mt-6">
-            <Button variant="outline" onClick={onClose}>
-              Close
-            </Button>
+          <div className="flex items-center justify-between mt-6">
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={onClose}>
+                Close
+              </Button>
+              <FavoriteButton 
+                workoutId={workoutId}
+                isFavorite={isFavorite}
+              />
+            </div>
             <Button onClick={onStartWorkout}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />

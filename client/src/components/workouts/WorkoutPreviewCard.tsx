@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Workout } from '@shared/schema';
+import { FavoriteButton } from '@/components/workouts/FavoriteButton';
+import { useQuery } from '@tanstack/react-query';
 
 interface WorkoutPreviewCardProps {
   workout: {
@@ -19,12 +21,35 @@ interface WorkoutPreviewCardProps {
 export function WorkoutPreviewCard({ workout, onClick }: WorkoutPreviewCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   
+  // Check if this workout is already a favorite
+  const { data: favorites = [] } = useQuery<any[]>({
+    queryKey: ['/api/favourites'],
+  });
+  
+  // Extract the numeric ID from the workout.id (which could be a string like "workout-5")
+  const workoutId = typeof workout.id === 'string' && workout.id.includes('-') 
+    ? parseInt(workout.id.split('-')[1]) 
+    : Number(workout.id);
+  
+  // Check if this workout is in favorites
+  const isFavorite = favorites.some(favorite => favorite.id === workoutId);
+  
+  // Custom click handler to prevent FavoriteButton click from triggering workout preview
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) onClick();
+  };
+  
+  // Handle favorite button click without triggering parent
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+  
   return (
     <motion.div 
       className="flex-shrink-0 w-[280px] md:w-[320px] rounded-lg overflow-hidden relative cursor-pointer"
       whileHover={{ scale: 1.03 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
-      onClick={onClick}
+      onClick={handleClick}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
     >
@@ -57,17 +82,14 @@ export function WorkoutPreviewCard({ workout, onClick }: WorkoutPreviewCardProps
              'WORKOUT'}
           </motion.div>
           
-          <motion.button 
-            className="bg-white bg-opacity-20 rounded-full p-1 text-white"
-            whileHover={{ 
-              backgroundColor: "rgba(255, 255, 255, 0.3)" 
-            }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-            </svg>
-          </motion.button>
+          <div onClick={handleFavoriteClick}>
+            <FavoriteButton
+              workoutId={workoutId}
+              isFavorite={isFavorite}
+              size="sm"
+              variant="ghost"
+            />
+          </div>
         </div>
         
         {/* Bottom content */}
