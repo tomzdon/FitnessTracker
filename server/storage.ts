@@ -278,6 +278,26 @@ export class DatabaseStorage implements IStorage {
       .returning();
     return user;
   }
+  
+  async updateUser(id: number, userData: { username?: string, email?: string }): Promise<User> {
+    // Build update object with only the fields that are provided
+    const updateData: Partial<User> = {};
+    if (userData.username !== undefined) updateData.username = userData.username;
+    if (userData.email !== undefined) updateData.email = userData.email;
+    
+    // Update the user in the database
+    const [updatedUser] = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+      
+    if (!updatedUser) {
+      throw new Error('User not found');
+    }
+    
+    return updatedUser;
+  }
 
   // Workout methods
   async getWorkouts(): Promise<Workout[]> {
