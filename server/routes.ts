@@ -230,6 +230,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get exercises for a workout (no auth required - public endpoint)
+  apiRouter.get('/exercises/:workoutId', async (req: Request, res: Response) => {
+    try {
+      const workoutId = parseInt(req.params.workoutId);
+      if (isNaN(workoutId)) {
+        return res.status(400).json({ message: 'Invalid workout ID' });
+      }
+      
+      const exercises = await storage.getExercisesByWorkoutId(workoutId);
+      res.json(exercises);
+    } catch (error) {
+      console.error('Error getting exercises by workout ID:', error);
+      res.status(500).json({ message: 'Failed to fetch exercises' });
+    }
+  });
+  
   // Get completed workouts
   apiRouter.get('/completedWorkouts', isAuthenticated, async (req: Request, res: Response) => {
     try {

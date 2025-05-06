@@ -28,6 +28,9 @@ export interface IStorage {
   getWorkout(id: number): Promise<Workout | undefined>;
   addWorkout(workout: InsertWorkout): Promise<Workout>;
   
+  // Exercise methods
+  getExercisesByWorkoutId(workoutId: number): Promise<any[]>;
+  
   // Program methods
   getPrograms(): Promise<Program[]>;
   getProgram(id: number): Promise<Program | undefined>;
@@ -228,6 +231,54 @@ export class MemStorage implements IStorage {
     };
     this.workouts.set(id, workout);
     return workout;
+  }
+  
+  // Exercise methods
+  async getExercisesByWorkoutId(workoutId: number): Promise<any[]> {
+    // In memory implementation - we'll return mock exercises
+    // In a real application with a database, this would fetch from the exercises table
+    return [
+      {
+        id: 1,
+        workoutId,
+        name: "Squats",
+        sets: 3,
+        reps: 12,
+        restTime: 60,
+        description: "Stand with feet shoulder-width apart, lower your body as if sitting in a chair, then return to starting position.",
+        order: 1
+      },
+      {
+        id: 2,
+        workoutId,
+        name: "Push-ups",
+        sets: 3,
+        reps: 10,
+        restTime: 60,
+        description: "Start in plank position with hands shoulder-width apart, lower your chest to the floor, then push back up.",
+        order: 2
+      },
+      {
+        id: 3,
+        workoutId,
+        name: "Lunges",
+        sets: 3,
+        reps: 10,
+        restTime: 60,
+        description: "Step forward with one leg, lower your body until both knees are bent at 90 degrees, then return to starting position.",
+        order: 3
+      },
+      {
+        id: 4,
+        workoutId,
+        name: "Plank",
+        sets: 3,
+        reps: 1,
+        restTime: 60,
+        description: "Hold forearm plank position with core engaged for 30-60 seconds.",
+        order: 4
+      }
+    ];
   }
   
   // Program methods
