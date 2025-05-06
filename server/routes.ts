@@ -148,19 +148,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
       const workoutId = parseInt(req.params.workoutId);
       
+      console.log(`Removing favorite for user:${userId}, workout:${workoutId}`);
+      
       // Find the favorite with the matching workout ID for this user
       const { pool } = require('./db');
       const result = await pool.query('SELECT * FROM favorites WHERE user_id = $1 AND workout_id = $2', [userId, workoutId]);
+      
+      console.log('Query result:', result.rows);
       
       if (result.rows.length === 0) {
         return res.status(404).json({ message: 'Favorite not found' });
       }
       
       const favoriteId = result.rows[0].id;
+      console.log(`Found favorite ID: ${favoriteId}`);
       
-      // Remove the favorite
-      await storage.removeFavorite(favoriteId);
-      res.status(204).end();
+      // Remove the favorite directly with SQL for maximum reliability
+      const deleteResult = await pool.query('DELETE FROM favorites WHERE id = $1 RETURNING *', [favoriteId]);
+      console.log('Delete result:', deleteResult.rows);
+      
+      res.status(200).json({ success: true, message: 'Favorite removed successfully' });
     } catch (error) {
       console.error('Error removing favorite by workout ID:', error);
       res.status(500).json({ message: 'Failed to remove favorite by workout ID' });
