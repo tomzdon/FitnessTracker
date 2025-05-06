@@ -80,14 +80,18 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate }: CalendarGridP
     setScheduledWorkoutsByDay(workoutsByDay);
   }, [monthWorkouts]);
   
-  // All days should appear to have workouts scheduled (filled green)
+  // Check if a date has workouts scheduled
   const hasWorkout = (day: number) => {
-    return true; // Always return true to make all days green
+    return scheduledWorkoutsByDay[day] && scheduledWorkoutsByDay[day].length > 0;
   };
   
-  // We don't need completion status distinction anymore
+  // Check if all workouts on a day are completed - only these days will be green
   const isCompleted = (day: number) => {
-    return false;
+    if (!scheduledWorkoutsByDay[day] || scheduledWorkoutsByDay[day].length === 0) {
+      return false;
+    }
+    
+    return scheduledWorkoutsByDay[day].every(workout => workout.isCompleted);
   };
   
   // Check if a date is today
@@ -138,7 +142,7 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate }: CalendarGridP
               className={`h-10 w-10 flex items-center justify-center text-sm font-medium rounded-full transition-colors relative
                 ${isSelected(day) ? 'bg-black text-white' : 'text-gray-800'}
                 ${!isSelected(day) && isToday(day) ? 'border-2 border-gray-300' : ''}
-                ${!isSelected(day) && hasWorkout(day) ? 'bg-green-100' : ''}
+                ${!isSelected(day) && hasWorkout(day) && isCompleted(day) ? 'bg-green-500 text-white' : ''}
                 ${!isSelected(day) ? 'hover:bg-gray-100' : ''}
               `}
             >
