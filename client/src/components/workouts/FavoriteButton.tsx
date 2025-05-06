@@ -1,0 +1,104 @@
+import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { Heart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { apiRequest, queryClient } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+
+interface FavoriteButtonProps {
+  workoutId: number;
+  isFavorite: boolean;
+  size?: 'sm' | 'default';
+  variant?: 'ghost' | 'outline' | 'default';
+}
+
+export function FavoriteButton({ 
+  workoutId, 
+  isFavorite: initialIsFavorite, 
+  size = 'default',
+  variant = 'ghost'
+}: FavoriteButtonProps) {
+  const { toast } = useToast();
+  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
+
+  // Add to favorites mutation
+  const addFavoriteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/favourites', { workoutId });
+      return await res.json();
+    },
+    onSuccess: () => {
+      setIsFavorite(true);
+      toast({
+        title: 'Added to favorites',
+        description: 'Workout has been added to your favorites',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/favourites'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to add to favorites',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Remove from favorites mutation
+  const removeFavoriteMutation = useMutation({
+    mutationFn: async () => {
+      // We need to get the favorite id first
+      const response = await fetch('/api/favourites');
+      if (!response.ok) throw new Error('Failed to fetch favorites');
+      const favorites = await response.json();
+      
+      // Find the favorite with matching workoutId
+      const favorite = favorites.find((fav: any) => fav.workoutId === workoutId);
+      if (!favorite) throw new Error('Favorite not found');
+      
+      // Remove the favorite
+      const res = await apiRequest('DELETE', `/api/favourites/${favorite.id}`);
+      return favorite;
+    },
+    onSuccess: () => {
+      setIsFavorite(false);
+      toast({
+        title: 'Removed from favorites',
+        description: 'Workout has been removed from your favorites',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/favourites'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to remove from favorites',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const isLoading = addFavoriteMutation.isPending || removeFavoriteMutation.isPending;
+
+  const handleToggleFavorite = () => {
+    if (isLoading) return;
+    
+    if (isFavorite) {
+      removeFavoriteMutation.mutate();
+    } else {
+      addFavoriteMutation.mutate();
+    }
+  };
+
+  return (
+    <Button 
+      variant={variant} 
+      size={size}
+      onClick={handleToggleFavorite}
+      disabled={isLoading}
+      aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+      className={isFavorite ? "text-red-500 hover:text-red-600" : "text-gray-400 hover:text-red-500"}
+    >
+      <Heart className={`h-[1.2em] w-[1.2em] ${isFavorite ? 'fill-current' : ''}`} />
+    </Button>
+  );
+}

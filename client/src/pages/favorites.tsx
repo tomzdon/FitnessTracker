@@ -1,10 +1,19 @@
-import FavouriteWorkoutsSection from "@/components/dashboard/FavouriteWorkoutsSection";
+import { FavoriteWorkouts } from "@/components/favorites/FavoriteWorkouts";
+import { useAuth } from "@/hooks/use-auth";
 
-export default function Favorites() {
+export default function FavoritesPage() {
+  const { user } = useAuth();
+
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold mb-6">Your Favourites</h1>
-      <FavouriteWorkoutsSection />
+      <div className="flex flex-col gap-2 mb-8">
+        <h1 className="text-3xl font-bold">My Favorites</h1>
+        <p className="text-muted-foreground">
+          View and manage your favorite workouts
+        </p>
+      </div>
+
+      <FavoriteWorkouts />
     </div>
   );
 }
