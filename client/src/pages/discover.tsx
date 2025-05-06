@@ -3,6 +3,9 @@ import { ChevronRight, Loader2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getQueryFn } from '@/lib/queryClient';
 import { Program, Workout } from '@shared/schema';
+import { WorkoutPreviewCard } from '@/components/workouts/WorkoutPreviewCard';
+import { WorkoutPreviewModal } from '@/components/workouts/WorkoutPreviewModal';
+import { useToast } from '@/hooks/use-toast';
 
 // Content categories
 const categories = [
@@ -18,6 +21,24 @@ const categories = [
 
 export default function Discover() {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [selectedWorkout, setSelectedWorkout] = useState<any>(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const { toast } = useToast();
+  
+  // Handle opening the preview modal
+  const handleWorkoutClick = (workout: any) => {
+    setSelectedWorkout(workout);
+    setIsPreviewModalOpen(true);
+  };
+  
+  // Handle starting the workout
+  const handleStartWorkout = () => {
+    toast({
+      title: "Workout started",
+      description: `You've started ${selectedWorkout.title}`,
+    });
+    setIsPreviewModalOpen(false);
+  };
 
   // Fetch workouts
   const workoutsQuery = useQuery<Workout[]>({
@@ -61,6 +82,7 @@ export default function Discover() {
           type: 'program',
           title: program.title,
           subtitle: program.description,
+          description: program.description,
           imageUrl: program.imageUrl || 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=1000&auto=format&fit=crop',
           totalDays: program.duration, 
           day: 1, // Default value for now
