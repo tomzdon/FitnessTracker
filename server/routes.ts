@@ -537,12 +537,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             activeProgram.userProgram.programId === updatedWorkout.programId && 
             activeProgram.userProgram.isActive) {
           
-          // If the workout is for the current day, advance to the next day
+          console.log(`Processing workout completion for program day ${updatedWorkout.programDay}, current program day: ${activeProgram.userProgram.currentDay}`);
+          
+          // If this workout is for the current day or an earlier day, we can advance the program
           if (updatedWorkout.programDay === activeProgram.userProgram.currentDay) {
+            // This is today's workout, advance to the next day
             const nextDay = activeProgram.userProgram.currentDay + 1;
+            console.log(`Advancing program to day ${nextDay} of ${activeProgram.program.duration}`);
             
             // If it's the last day, mark the program as completed
             if (nextDay > activeProgram.program.duration) {
+              console.log(`Program completed! Marking as inactive.`);
               await storage.updateUserProgramProgress(
                 activeProgram.userProgram.id,
                 { 
@@ -552,12 +557,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
               );
             } else {
               // Otherwise advance to the next day
+              console.log(`Advancing to day ${nextDay}`);
               await storage.updateUserProgramProgress(
                 activeProgram.userProgram.id,
                 { currentDay: nextDay }
               );
             }
+          } else if (updatedWorkout.programDay > activeProgram.userProgram.currentDay) {
+            // This is a future workout, user is skipping ahead
+            // Let's update progress to this day since they completed it
+            console.log(`User completed a future workout (day ${updatedWorkout.programDay}), updating current day.`);
+            await storage.updateUserProgramProgress(
+              activeProgram.userProgram.id,
+              { currentDay: updatedWorkout.programDay }
+            );
+          } else {
+            // This is a previous workout, just log that they completed it
+            console.log(`User completed a previous workout (day ${updatedWorkout.programDay}), no change to current day ${activeProgram.userProgram.currentDay}.`);
           }
+          
+          // Log the progress update
+          console.log(`Program progress updated for user ${userId}, program ${activeProgram.program.id}`);
         }
       }
       
