@@ -22,7 +22,7 @@ export default function Calendar() {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   
-  // Fetch all workouts and automatically fill calendar
+  // Fetch all workouts and force fill the calendar for all days
   useEffect(() => {
     const fetchWorkoutsAndFillCalendar = async () => {
       try {
@@ -32,28 +32,10 @@ export default function Calendar() {
           const workouts = await response.json();
           setAvailableWorkouts(workouts);
           
-          // If workouts are available, automatically fill the calendar
+          // If workouts are available, force fill the calendar for all days
           if (workouts.length > 0) {
-            // Get the number of days in the current month
-            const daysInMonth = getDaysInMonth(new Date(year, month));
-            const firstDayOfMonth = startOfMonth(new Date(year, month));
-            
-            // Check if we already have data for this month
-            const start = startOfMonth(new Date(year, month));
-            const end = endOfMonth(new Date(year, month));
-            const startDate = format(start, 'yyyy-MM-dd');
-            const endDate = format(end, 'yyyy-MM-dd');
-            
-            const existingDataResponse = await fetch(`/api/scheduled-workouts/range/${startDate}/${endDate}`);
-            if (existingDataResponse.ok) {
-              const existingWorkouts = await existingDataResponse.json();
-              
-              // Only auto-fill if we don't already have a good number of workouts scheduled
-              if (existingWorkouts.length < daysInMonth / 2) {
-                console.log('Auto-filling calendar with workouts');
-                await fillCalendar();
-              }
-            }
+            console.log('Force filling calendar with workouts for all days');
+            await fillCalendar();
           }
         }
       } catch (error) {
@@ -62,6 +44,7 @@ export default function Calendar() {
     };
     
     fetchWorkoutsAndFillCalendar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [year, month]);
 
   // Handle month navigation

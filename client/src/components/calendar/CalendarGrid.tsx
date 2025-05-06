@@ -80,18 +80,14 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate }: CalendarGridP
     setScheduledWorkoutsByDay(workoutsByDay);
   }, [monthWorkouts]);
   
-  // Check if a date has workouts scheduled
+  // All days should appear to have workouts scheduled (filled green)
   const hasWorkout = (day: number) => {
-    return scheduledWorkoutsByDay[day] && scheduledWorkoutsByDay[day].length > 0;
+    return true; // Always return true to make all days green
   };
   
-  // Check if all workouts on a day are completed
+  // We don't need completion status distinction anymore
   const isCompleted = (day: number) => {
-    if (!scheduledWorkoutsByDay[day] || scheduledWorkoutsByDay[day].length === 0) {
-      return false;
-    }
-    
-    return scheduledWorkoutsByDay[day].every(workout => workout.isCompleted);
+    return false;
   };
   
   // Check if a date is today
@@ -142,27 +138,14 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate }: CalendarGridP
               className={`h-10 w-10 flex items-center justify-center text-sm font-medium rounded-full transition-colors relative
                 ${isSelected(day) ? 'bg-black text-white' : 'text-gray-800'}
                 ${!isSelected(day) && isToday(day) ? 'border-2 border-gray-300' : ''}
-                ${!isSelected(day) && hasWorkout(day) && isCompleted(day) ? 'bg-green-100' : ''}
-                ${!isSelected(day) && hasWorkout(day) && !isCompleted(day) ? 'bg-blue-100' : ''}
+                ${!isSelected(day) && hasWorkout(day) ? 'bg-green-100' : ''}
                 ${!isSelected(day) ? 'hover:bg-gray-100' : ''}
               `}
             >
               {day}
-              
-              {/* Dot indicator for scheduled workouts */}
-              {hasWorkout(day) && !isSelected(day) && (
-                <span className={`absolute -bottom-1 left-1/2 transform -translate-x-1/2 h-1.5 w-1.5 rounded-full
-                  ${isCompleted(day) ? 'bg-green-500' : 'bg-blue-500'}
-                `}></span>
-              )}
             </button>
             
-            {/* Badge for multiple workouts */}
-            {scheduledWorkoutsByDay[day] && scheduledWorkoutsByDay[day].length > 1 && (
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">
-                {scheduledWorkoutsByDay[day].length}
-              </span>
-            )}
+            {/* No badge for multiple workouts */}
           </div>
         ))}
       </div>
