@@ -62,6 +62,27 @@ export const insertWorkoutSchema = createInsertSchema(workouts).omit({
 export type InsertWorkout = z.infer<typeof insertWorkoutSchema>;
 export type Workout = typeof workouts.$inferSelect;
 
+// Exercises
+export const exercises = pgTable("exercises", {
+  id: serial("id").primaryKey(),
+  workoutId: integer("workout_id").notNull().references(() => workouts.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  sets: integer("sets").notNull(),
+  reps: integer("reps").notNull(),
+  restTime: integer("rest_time").notNull(), // rest time in seconds
+  order: integer("order").notNull(), // order in the workout
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertExerciseSchema = createInsertSchema(exercises).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertExercise = z.infer<typeof insertExerciseSchema>;
+export type Exercise = typeof exercises.$inferSelect;
+
 // Favorites
 export const favorites = pgTable("favorites", {
   id: serial("id").primaryKey(),
@@ -167,6 +188,14 @@ export const workoutsRelations = relations(workouts, ({ many }) => ({
   completedWorkouts: many(completedWorkouts),
   favorites: many(favorites),
   programWorkouts: many(programWorkouts),
+  exercises: many(exercises),
+}));
+
+export const exercisesRelations = relations(exercises, ({ one }) => ({
+  workout: one(workouts, {
+    fields: [exercises.workoutId],
+    references: [workouts.id],
+  }),
 }));
 
 export const favoritesRelations = relations(favorites, ({ one }) => ({
