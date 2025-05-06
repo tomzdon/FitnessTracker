@@ -58,12 +58,20 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
       const res = await apiRequest("PUT", `/api/scheduled-workouts/${id}/complete`, { isCompleted });
       return await res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      const status = data.completedWorkout ? 'completed' : 'marked as incomplete';
       toast({
-        title: "Workout status updated",
-        description: "Your workout status has been updated",
+        title: `Workout ${status}`,
+        description: data.completedWorkout 
+          ? "Great job! Your progress has been updated." 
+          : "Workout has been marked as incomplete",
       });
+      
+      // Invalidate all relevant queries to update the UI
       queryClient.invalidateQueries({ queryKey: ['/api/scheduled-workouts/date'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/active-program'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/completedWorkouts'] });
     },
     onError: (error: Error) => {
       toast({
@@ -97,10 +105,18 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
       ) : (
         <div className="space-y-4">
           {workoutDetails.map((workout: any) => (
-            <div key={workout.scheduledWorkoutId} className="border rounded-lg p-4 bg-gray-50">
+            <div 
+              key={workout.scheduledWorkoutId} 
+              className={`border rounded-lg p-4 ${workout.isCompleted ? 'bg-green-50 border-green-200' : 'bg-gray-50'}`}
+            >
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h4 className="font-medium">{workout.title}</h4>
+                  <div className="flex items-center">
+                    {workout.isCompleted && (
+                      <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                    )}
+                    <h4 className="font-medium">{workout.title}</h4>
+                  </div>
                   <div className="flex items-center text-gray-500 text-sm mt-1">
                     <Clock className="h-3.5 w-3.5 mr-1" />
                     <span>{workout.duration} minutes</span>
@@ -114,12 +130,18 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
                   </div>
                 </div>
                 <Button 
-                  variant={workout.isCompleted ? "default" : "outline"}
+                  variant={workout.isCompleted ? "outline" : "default"}
                   size="sm"
                   onClick={() => handleToggleComplete(workout.scheduledWorkoutId, workout.isCompleted)}
                   disabled={markCompletedMutation.isPending}
+                  className={workout.isCompleted ? 'border-green-200 text-green-700 hover:bg-green-100 hover:text-green-800' : ''}
                 >
-                  {workout.isCompleted ? (
+                  {markCompletedMutation.isPending ? (
+                    <div className="flex items-center">
+                      <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-1"></div>
+                      <span>Updating...</span>
+                    </div>
+                  ) : workout.isCompleted ? (
                     <>
                       <CheckCircle className="h-4 w-4 mr-1" />
                       <span>Completed</span>

@@ -507,14 +507,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.put('/scheduled-workouts/:id/complete', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
+      const userId = req.user!.id;
       const { isCompleted } = req.body;
       
       if (isCompleted === undefined) {
         return res.status(400).json({ message: 'Missing isCompleted field' });
       }
       
+      // Step 1: Mark the scheduled workout as completed
       const updatedWorkout = await storage.markScheduledWorkoutCompleted(id, Boolean(isCompleted));
-      res.json(updatedWorkout);
+      
+      // If not marking as completed, just return the updated workout
+      if (!isCompleted) {
+        return res.json(updatedWorkout);
+      }
+      
+      // Step 2: Add to completed workouts history
+      const completedWorkout = await storage.addCompletedWorkout({
+        userId,
+        workoutId: updatedWorkout.workoutId
+      });
+      
+      // Step 3: If this is part of a program, update program progress
+      if (updatedWorkout.programId) {
+        // Get the active program for this user
+        const activeProgram = await storage.getActiveUserProgram(userId);
+        
+        if (activeProgram && 
+            activeProgram.userProgram.programId === updatedWorkout.programId && 
+            activeProgram.userProgram.isActive) {
+          
+          // If the workout is for the current day, advance to the next day
+          if (updatedWorkout.programDay === activeProgram.userProgram.currentDay) {
+            const nextDay = activeProgram.userProgram.currentDay + 1;
+            
+            // If it's the last day, mark the program as completed
+            if (nextDay > activeProgram.program.duration) {
+              await storage.updateUserProgramProgress(
+                activeProgram.userProgram.id,
+                { 
+                  isActive: false,
+                  completedAt: new Date()
+                }
+              );
+            } else {
+              // Otherwise advance to the next day
+              await storage.updateUserProgramProgress(
+                activeProgram.userProgram.id,
+                { currentDay: nextDay }
+              );
+            }
+          }
+        }
+      }
+      
+      // Return the updated workout with completed workout info
+      res.json({
+        updatedWorkout,
+        completedWorkout
+      });
     } catch (error) {
       console.error('Error updating scheduled workout:', error);
       res.status(500).json({ message: 'Failed to update scheduled workout' });
