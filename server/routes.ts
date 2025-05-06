@@ -132,17 +132,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = req.user!.id;
       // Get all favorites from storage directly (not resolved)
-      const db = req.app.locals.db;
+      const { pool } = require('./db');
       const query = `SELECT * FROM favorites WHERE user_id = $1`;
-      const result = await db.query(query, [userId]);
+      const result = await pool.query(query, [userId]);
       res.json(result.rows);
     } catch (error) {
       console.error('Error getting favorite details:', error);
       res.status(500).json({ message: 'Failed to fetch favorite details' });
     }
   });
-
-  // Remove favorite
+  
+  // Remove favorite by workout ID - MUST come before the generic :id route
+  apiRouter.delete('/favourites/by-workout/:workoutId', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      const workoutId = parseInt(req.params.workoutId);
+      
+      // Find the favorite with the matching workout ID for this user
+      const { pool } = require('./db');
+      const result = await pool.query('SELECT * FROM favorites WHERE user_id = $1 AND workout_id = $2', [userId, workoutId]);
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'Favorite not found' });
+      }
+      
+      const favoriteId = result.rows[0].id;
+      
+      // Remove the favorite
+      await storage.removeFavorite(favoriteId);
+      res.status(204).end();
+    } catch (error) {
+      console.error('Error removing favorite by workout ID:', error);
+      res.status(500).json({ message: 'Failed to remove favorite by workout ID' });
+    }
+  });
+  
+  // Remove favorite by ID
   apiRouter.delete('/favourites/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
