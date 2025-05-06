@@ -47,18 +47,9 @@ export function FavoriteButton({
   // Remove from favorites mutation
   const removeFavoriteMutation = useMutation({
     mutationFn: async () => {
-      // We need to get the favorite id first
-      const response = await fetch('/api/favourites');
-      if (!response.ok) throw new Error('Failed to fetch favorites');
-      const favorites = await response.json();
-      
-      // Find the favorite with matching workoutId
-      const favorite = favorites.find((fav: any) => fav.workoutId === workoutId);
-      if (!favorite) throw new Error('Favorite not found');
-      
-      // Remove the favorite
-      const res = await apiRequest('DELETE', `/api/favourites/${favorite.id}`);
-      return favorite;
+      // Remove directly by workoutId
+      const res = await apiRequest('DELETE', `/api/favourites/by-workout/${workoutId}`);
+      return { workoutId };
     },
     onSuccess: () => {
       setIsFavorite(false);

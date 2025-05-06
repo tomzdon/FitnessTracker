@@ -127,6 +127,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get favorite details (raw records without workout details)
+  apiRouter.get('/favourites/details', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user!.id;
+      // Get all favorites from storage directly (not resolved)
+      const db = req.app.locals.db;
+      const query = `SELECT * FROM favorites WHERE user_id = $1`;
+      const result = await db.query(query, [userId]);
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Error getting favorite details:', error);
+      res.status(500).json({ message: 'Failed to fetch favorite details' });
+    }
+  });
+
   // Remove favorite
   apiRouter.delete('/favourites/:id', isAuthenticated, async (req: Request, res: Response) => {
     try {
