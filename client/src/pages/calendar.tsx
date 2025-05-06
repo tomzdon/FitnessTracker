@@ -1,19 +1,43 @@
 import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { format, getDaysInMonth, startOfMonth, addDays } from 'date-fns';
 import CalendarHeader from '@/components/calendar/CalendarHeader';
 import CalendarGrid from '@/components/calendar/CalendarGrid';
 import DayPanel from '@/components/calendar/DayPanel';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { CalendarPlus, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Calendar() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  
   // State for the current month and selected date
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [availableWorkouts, setAvailableWorkouts] = useState<any[]>([]);
 
   // Get month and year for display
   const monthYear = format(currentDate, 'MMMM');
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
+  
+  // Fetch all workouts to use for filling the calendar
+  useEffect(() => {
+    const fetchWorkouts = async () => {
+      try {
+        const response = await fetch('/api/workouts');
+        if (response.ok) {
+          const workouts = await response.json();
+          setAvailableWorkouts(workouts);
+        }
+      } catch (error) {
+        console.error('Failed to fetch workouts:', error);
+      }
+    };
+    
+    fetchWorkouts();
+  }, []);
 
   // Handle month navigation
   const goToPreviousMonth = () => {
@@ -22,6 +46,104 @@ export default function Calendar() {
 
   const goToNextMonth = () => {
     setCurrentDate(new Date(year, month + 1, 1));
+  };
+  
+  // Schedule workout mutation
+  const scheduleWorkoutMutation = useMutation({
+    mutationFn: async (workoutData: {
+      workoutId: number;
+      scheduledDate: string;
+      programId?: number;
+      programDay?: number;
+    }) => {
+      const response = await fetch('/api/scheduled-workouts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          workoutId: workoutData.workoutId,
+          scheduledDate: workoutData.scheduledDate,
+          programId: workoutData.programId || 1, // Using a default program ID
+          programDay: workoutData.programDay || 1, // Using a default program day
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to schedule workout');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      // Invalidate the relevant queries to refetch the data
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/scheduled-workouts/date']
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Failed to schedule workout',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+  
+  // Function to fill the calendar with workouts for the current month
+  const fillCalendar = async () => {
+    if (availableWorkouts.length === 0) {
+      toast({
+        title: 'No workouts available',
+        description: 'Please add workouts to your library first',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    // Get the number of days in the current month
+    const daysInMonth = getDaysInMonth(new Date(year, month));
+    const firstDayOfMonth = startOfMonth(new Date(year, month));
+    
+    // Schedule a workout for each day of the month
+    const schedulePromises = [];
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+      // Get a random workout from the available workouts
+      const randomWorkout = availableWorkouts[Math.floor(Math.random() * availableWorkouts.length)];
+      const currentDate = addDays(firstDayOfMonth, day - 1);
+      
+      // Format date for the API request
+      const formattedDate = currentDate.toISOString().split('T')[0];
+      
+      schedulePromises.push(
+        scheduleWorkoutMutation.mutateAsync({
+          workoutId: randomWorkout.id,
+          scheduledDate: formattedDate,
+          programDay: day,
+        })
+      );
+    }
+    
+    try {
+      await Promise.all(schedulePromises);
+      toast({
+        title: 'Calendar filled',
+        description: `Scheduled workouts for all ${daysInMonth} days in ${monthYear}`,
+      });
+      
+      // Refresh the calendar data
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/scheduled-workouts/date'] 
+      });
+    } catch (error) {
+      toast({
+        title: 'Failed to fill calendar',
+        description: (error as Error).message,
+        variant: 'destructive',
+      });
+    }
   };
 
   // Query for scheduled workouts on the selected date
@@ -50,7 +172,21 @@ export default function Calendar() {
 
   return (
     <div className="container mx-auto px-4 py-6">
-      <h1 className="text-3xl font-bold text-center mb-8">Calendar</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Calendar</h1>
+        <Button 
+          onClick={fillCalendar} 
+          disabled={scheduleWorkoutMutation.isPending}
+          className="bg-primary hover:bg-primary-dark text-white"
+        >
+          {scheduleWorkoutMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <CalendarPlus className="mr-2 h-4 w-4" />
+          )}
+          Fill Calendar with Workouts
+        </Button>
+      </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Calendar section - 3 columns on large screens */}
