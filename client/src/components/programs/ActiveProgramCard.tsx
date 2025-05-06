@@ -210,21 +210,9 @@ export function ActiveProgramCard() {
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center justify-between">
           <span>{program.title}</span>
-          <div className="flex space-x-2">
-            <Button variant="ghost" size="sm" onClick={handleViewProgram}>
-              View Program
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleUnsubscribe}
-              disabled={unsubscribeMutation.isPending}
-            >
-              {unsubscribeMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : "Unsubscribe"}
-            </Button>
-          </div>
+          <Button variant="ghost" size="sm" onClick={handleViewProgram}>
+            View Program
+          </Button>
         </CardTitle>
         <CardDescription>
           Day {userProgram.currentDay} of {program.duration}
@@ -260,7 +248,7 @@ export function ActiveProgramCard() {
           <p className="text-sm text-gray-500">No workout scheduled for day {userProgram.currentDay}.</p>
         )}
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col space-y-2">
         {currentDayWorkout && (
           <Button 
             className="w-full" 
@@ -275,6 +263,17 @@ export function ActiveProgramCard() {
             Complete Today's Workout
           </Button>
         )}
+        
+        <Button 
+          variant="outline" 
+          className="w-full" 
+          onClick={handleUnsubscribe}
+          disabled={unsubscribeMutation.isPending}
+        >
+          {unsubscribeMutation.isPending ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : "Unsubscribe from Program"}
+        </Button>
       </CardFooter>
     </Card>
   );
