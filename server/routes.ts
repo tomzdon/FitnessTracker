@@ -38,8 +38,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.put('/me', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const userId = req.user!.id;
-      // Only allow updating certain fields
-      const { username, email } = req.body;
+      // Allow updating both profile and fitness information
+      const { 
+        username, 
+        email, 
+        firstName,
+        lastName,
+        gender, 
+        age, 
+        fitnessLevel, 
+        fitnessGoals, 
+        preferredWorkoutDays,
+        workoutReminders
+      } = req.body;
       
       // Check if username already exists
       if (username && username !== req.user!.username) {
@@ -50,7 +61,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Update the user
-      const updatedUser = await storage.updateUser(userId, { username, email });
+      const updatedUser = await storage.updateUser(userId, { 
+        username, 
+        email,
+        firstName,
+        lastName,
+        gender, 
+        age: age ? parseInt(age) : undefined, 
+        fitnessLevel, 
+        fitnessGoals, 
+        preferredWorkoutDays,
+        workoutReminders: workoutReminders !== undefined ? Boolean(workoutReminders) : undefined
+      });
       
       // Update the session user data
       req.user = updatedUser;

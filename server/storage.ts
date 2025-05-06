@@ -10,7 +10,18 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, userData: { username?: string, email?: string }): Promise<User>;
+  updateUser(id: number, userData: { 
+    username?: string, 
+    email?: string, 
+    firstName?: string,
+    lastName?: string,
+    gender?: string, 
+    age?: number, 
+    fitnessLevel?: string, 
+    fitnessGoals?: string, 
+    preferredWorkoutDays?: string,
+    workoutReminders?: boolean
+  }): Promise<User>;
   
   // Workout methods
   getWorkouts(): Promise<Workout[]>;
@@ -120,7 +131,18 @@ export class MemStorage implements IStorage {
     return user;
   }
   
-  async updateUser(id: number, userData: { username?: string, email?: string }): Promise<User> {
+  async updateUser(id: number, userData: { 
+    username?: string, 
+    email?: string, 
+    firstName?: string,
+    lastName?: string,
+    gender?: string, 
+    age?: number, 
+    fitnessLevel?: string, 
+    fitnessGoals?: string, 
+    preferredWorkoutDays?: string,
+    workoutReminders?: boolean
+  }): Promise<User> {
     const existingUser = await this.getUser(id);
     if (!existingUser) {
       throw new Error('User not found');
@@ -129,7 +151,15 @@ export class MemStorage implements IStorage {
     const updatedUser: User = {
       ...existingUser,
       username: userData.username || existingUser.username,
-      email: userData.email !== undefined ? userData.email : existingUser.email
+      email: userData.email !== undefined ? userData.email : existingUser.email,
+      firstName: userData.firstName !== undefined ? userData.firstName : existingUser.firstName,
+      lastName: userData.lastName !== undefined ? userData.lastName : existingUser.lastName,
+      gender: userData.gender !== undefined ? userData.gender : existingUser.gender,
+      age: userData.age !== undefined ? userData.age : existingUser.age,
+      fitnessLevel: userData.fitnessLevel !== undefined ? userData.fitnessLevel : existingUser.fitnessLevel,
+      fitnessGoals: userData.fitnessGoals !== undefined ? userData.fitnessGoals : existingUser.fitnessGoals,
+      preferredWorkoutDays: userData.preferredWorkoutDays !== undefined ? userData.preferredWorkoutDays : existingUser.preferredWorkoutDays,
+      workoutReminders: userData.workoutReminders !== undefined ? userData.workoutReminders : existingUser.workoutReminders,
     };
     
     this.users.set(id, updatedUser);
@@ -279,11 +309,30 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
   
-  async updateUser(id: number, userData: { username?: string, email?: string }): Promise<User> {
+  async updateUser(id: number, userData: { 
+    username?: string, 
+    email?: string, 
+    firstName?: string,
+    lastName?: string,
+    gender?: string, 
+    age?: number, 
+    fitnessLevel?: string, 
+    fitnessGoals?: string, 
+    preferredWorkoutDays?: string,
+    workoutReminders?: boolean
+  }): Promise<User> {
     // Build update object with only the fields that are provided
     const updateData: Partial<User> = {};
     if (userData.username !== undefined) updateData.username = userData.username;
     if (userData.email !== undefined) updateData.email = userData.email;
+    if (userData.firstName !== undefined) updateData.firstName = userData.firstName;
+    if (userData.lastName !== undefined) updateData.lastName = userData.lastName;
+    if (userData.gender !== undefined) updateData.gender = userData.gender;
+    if (userData.age !== undefined) updateData.age = userData.age;
+    if (userData.fitnessLevel !== undefined) updateData.fitnessLevel = userData.fitnessLevel;
+    if (userData.fitnessGoals !== undefined) updateData.fitnessGoals = userData.fitnessGoals;
+    if (userData.preferredWorkoutDays !== undefined) updateData.preferredWorkoutDays = userData.preferredWorkoutDays;
+    if (userData.workoutReminders !== undefined) updateData.workoutReminders = userData.workoutReminders;
     
     // Update the user in the database
     const [updatedUser] = await db

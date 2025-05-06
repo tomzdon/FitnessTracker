@@ -11,6 +11,14 @@ import { useToast } from "@/hooks/use-toast";
 type UpdateUserData = {
   username?: string;
   email?: string;
+  firstName?: string;
+  lastName?: string;
+  gender?: string;
+  age?: number;
+  fitnessLevel?: string;
+  fitnessGoals?: string;
+  preferredWorkoutDays?: string;
+  workoutReminders?: boolean;
 };
 
 type AuthContextType = {
