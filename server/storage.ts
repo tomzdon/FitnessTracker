@@ -1,6 +1,6 @@
 import { type User, type InsertUser, type Workout, type InsertWorkout, type Favorite, type InsertFavorite, type CompletedWorkout, type InsertCompletedWorkout, type ProgressTest, type InsertProgressTest, type Program, type InsertProgram, type ProgramWorkout, type InsertProgramWorkout, type UserProgram, type InsertUserProgram, type ScheduledWorkout, type InsertScheduledWorkout, type Statistics, type Exercise, users, workouts, favorites, completedWorkouts, progressTests, programs, programWorkouts, userPrograms, scheduledWorkouts, exercises } from "@shared/schema";
 import { db, pool } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, asc, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import createMemoryStore from "memorystore";
@@ -246,7 +246,8 @@ export class MemStorage implements IStorage {
         reps: 12,
         restTime: 60,
         description: "Stand with feet shoulder-width apart, lower your body as if sitting in a chair, then return to starting position.",
-        order: 1
+        order: 1,
+        createdAt: new Date()
       },
       {
         id: 2,
@@ -256,7 +257,8 @@ export class MemStorage implements IStorage {
         reps: 10,
         restTime: 60,
         description: "Start in plank position with hands shoulder-width apart, lower your chest to the floor, then push back up.",
-        order: 2
+        order: 2,
+        createdAt: new Date()
       },
       {
         id: 3,
@@ -266,7 +268,8 @@ export class MemStorage implements IStorage {
         reps: 10,
         restTime: 60,
         description: "Step forward with one leg, lower your body until both knees are bent at 90 degrees, then return to starting position.",
-        order: 3
+        order: 3,
+        createdAt: new Date()
       },
       {
         id: 4,
@@ -276,7 +279,8 @@ export class MemStorage implements IStorage {
         reps: 1,
         restTime: 60,
         description: "Hold forearm plank position with core engaged for 30-60 seconds.",
-        order: 4
+        order: 4,
+        createdAt: new Date()
       }
     ];
   }
@@ -693,8 +697,8 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Exercise methods
-  async getExercisesByWorkoutId(workoutId: number): Promise<any[]> {
-    return db.select().from(exercises).where(eq(exercises.workoutId, workoutId)).orderBy(exercises.order);
+  async getExercisesByWorkoutId(workoutId: number): Promise<Exercise[]> {
+    return db.select().from(exercises).where(eq(exercises.workoutId, workoutId)).orderBy(asc(exercises.order));
   }
   
   // Program methods
