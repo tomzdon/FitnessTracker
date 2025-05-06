@@ -56,7 +56,40 @@ export default function WorkoutDetailCard({
 }: WorkoutDetailCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isExercisesOpen, setIsExercisesOpen] = useState(false);
+  
+  // Auto-expand exercise list if we have actual exercises from the database
+  const [isExercisesOpen, setIsExercisesOpen] = useState(exercises.length > 0);
+  const [completedSets, setCompletedSets] = useState<Record<number, Set<number>>>({});
+  
+  const markSetCompleted = (exerciseId: number, setIndex: number) => {
+    setCompletedSets(prev => {
+      const newCompletedSets = { ...prev };
+      if (!newCompletedSets[exerciseId]) {
+        newCompletedSets[exerciseId] = new Set();
+      }
+      
+      // Toggle set completion status
+      const exerciseSets = new Set(newCompletedSets[exerciseId]);
+      if (exerciseSets.has(setIndex)) {
+        exerciseSets.delete(setIndex);
+      } else {
+        exerciseSets.add(setIndex);
+      }
+      
+      newCompletedSets[exerciseId] = exerciseSets;
+      return newCompletedSets;
+    });
+    
+    // Show toast notification
+    toast({
+      title: `Set ${setIndex + 1} tracked`,
+      description: `Your progress has been updated.`,
+    });
+  };
+  
+  const isSetCompleted = (exerciseId: number, setIndex: number) => {
+    return completedSets[exerciseId]?.has(setIndex) || false;
+  };
   
   const markCompletedMutation = useMutation({
     mutationFn: async ({ id, isCompleted }: { id: number, isCompleted: boolean }) => {
@@ -259,6 +292,27 @@ export default function WorkoutDetailCard({
                 )}
                 <div className="text-xs text-gray-500 mt-1">
                   Rest: {exercise.restTime} sec
+                </div>
+                <div className="mt-2">
+                  <div className="flex space-x-2">
+                    {Array.from({ length: exercise.sets }).map((_, setIndex) => (
+                      <Button 
+                        key={setIndex} 
+                        variant={isSetCompleted(exercise.id, setIndex) ? "default" : "outline"}
+                        size="sm" 
+                        className={`h-8 w-8 p-0 ${isSetCompleted(exercise.id, setIndex) ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                        onClick={() => markSetCompleted(exercise.id, setIndex)}
+                      >
+                        {setIndex + 1}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  {completedSets[exercise.id]?.size > 0 && (
+                    <div className="text-xs text-green-600 font-medium mt-1">
+                      {completedSets[exercise.id]?.size} of {exercise.sets} sets completed
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
