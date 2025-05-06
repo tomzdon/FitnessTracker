@@ -1,8 +1,10 @@
 import { useLocation } from "wouter";
-import { Bell } from "lucide-react";
+import { Bell, UserCircle } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 const Header = () => {
   const [location] = useLocation();
+  const { user, isLoading } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
@@ -68,15 +70,19 @@ const Header = () => {
           </div>
           
           <a 
-            href="/profile" 
+            href={user ? "/profile" : "/auth"} 
             className="flex items-center space-x-2 bg-gray-100 rounded-full p-1 pr-3"
           >
             <div className="bg-gray-700 rounded-full h-8 w-8 overflow-hidden flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-              </svg>
+              <UserCircle className="h-5 w-5 text-white" />
             </div>
-            <span className="text-sm font-medium">Tomasz</span>
+            {isLoading ? (
+              <span className="text-sm font-medium">Loading...</span>
+            ) : user ? (
+              <span className="text-sm font-medium">{user.username}</span>
+            ) : (
+              <span className="text-sm font-medium">Sign In</span>
+            )}
           </a>
         </div>
       </div>

@@ -1,8 +1,8 @@
-import { User } from "@shared/schema";
+import { User as SelectUser } from "@shared/schema";
 import { UserCircle, Edit } from "lucide-react";
 
 interface ProfileHeaderProps {
-  user?: User;
+  user?: SelectUser | null;
   onEditProfile?: () => void;
 }
 

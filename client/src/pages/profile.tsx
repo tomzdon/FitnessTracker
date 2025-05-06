@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { User } from "@shared/schema";
+import { User as SelectUser } from "@shared/schema";
 import {
   Form,
   FormControl,
@@ -35,7 +35,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('account');
-  const { user, updateUserMutation } = useAuth();
+  const { user, updateUserMutation, logoutMutation } = useAuth();
   
   // Setup form with user data
   const form = useForm<ProfileFormValues>({
