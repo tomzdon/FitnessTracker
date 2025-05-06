@@ -256,14 +256,16 @@ export default function WorkoutDetailCard({
         <p className="text-sm text-gray-600">{description}</p>
       </CardContent>
       
-      <Separator />
+      <div className="px-4 pt-4 pb-2">
+        <h3 className="text-lg font-semibold">Exercises</h3>
+      </div>
       
       <Collapsible
         open={isExercisesOpen}
         onOpenChange={setIsExercisesOpen}
         className="w-full"
       >
-        <CollapsibleTrigger asChild>
+        <CollapsibleTrigger asChild className="hidden">
           <Button 
             variant="ghost" 
             className="w-full flex justify-between py-2 rounded-none"
@@ -277,23 +279,34 @@ export default function WorkoutDetailCard({
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="px-4 pb-4 divide-y">
+          <div className="p-4 space-y-4">
             {displayExercises.map((exercise, index) => (
-              <div key={exercise.id} className="py-3">
-                <div className="flex justify-between items-start mb-1">
-                  <h4 className="font-medium text-sm">{index + 1}. {exercise.name}</h4>
-                  <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-800">
-                    {exercise.sets} × {exercise.reps} {exercise.reps === 1 ? 'rep' : 'reps'}
-                    {exercise.weight ? ` (${exercise.weight}kg)` : ''}
-                  </span>
+              <div key={exercise.id} className="rounded-lg border overflow-hidden">
+                <div className="px-4 py-3 bg-white flex justify-between items-center">
+                  <div className="flex items-center">
+                    <h4 className="font-semibold text-base">{exercise.name}</h4>
+                    <div className="ml-3 text-gray-500 text-sm font-medium">
+                      {index + 1}/{displayExercises.length}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium">
+                      {exercise.sets} sets × {exercise.reps} {exercise.reps === 1 ? 'rep' : 'reps'}
+                      {exercise.weight ? ` (${exercise.weight}kg)` : ''}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Rest: {exercise.restTime} sec
+                    </div>
+                  </div>
                 </div>
+                
                 {exercise.description && (
-                  <p className="text-xs text-gray-500">{exercise.description}</p>
+                  <div className="px-4 py-2 bg-gray-50 border-y text-sm text-gray-600">
+                    {exercise.description}
+                  </div>
                 )}
-                <div className="text-xs text-gray-500 mt-1">
-                  Rest: {exercise.restTime} sec
-                </div>
-                <div className="mt-2">
+                
+                <div className="px-4 py-3 flex justify-between items-center">
                   <div className="flex space-x-2">
                     {Array.from({ length: exercise.sets }).map((_, setIndex) => (
                       <Button 
@@ -308,11 +321,9 @@ export default function WorkoutDetailCard({
                     ))}
                   </div>
                   
-                  {completedSets[exercise.id]?.size > 0 && (
-                    <div className="text-xs text-green-600 font-medium mt-1">
-                      {completedSets[exercise.id]?.size} of {exercise.sets} sets completed
-                    </div>
-                  )}
+                  <div className="text-sm font-medium">
+                    {completedSets[exercise.id]?.size || 0}/{exercise.sets}
+                  </div>
                 </div>
               </div>
             ))}
