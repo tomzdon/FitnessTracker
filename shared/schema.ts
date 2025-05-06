@@ -218,7 +218,7 @@ export const userPrograms = pgTable("user_programs", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   programId: integer("program_id").notNull().references(() => programs.id),
-  startDate: timestamp("start_date").defaultNow().notNull(),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
   currentDay: integer("current_day").default(1),
   isActive: boolean("is_active").default(true),
   completedAt: timestamp("completed_at"),

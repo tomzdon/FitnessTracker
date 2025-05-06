@@ -679,7 +679,7 @@ export class DatabaseStorage implements IStorage {
       .insert(userPrograms)
       .values({
         ...insertUserProgram,
-        startDate: new Date(),
+        startedAt: new Date(),
         currentDay: insertUserProgram.currentDay || 1,
         isActive: insertUserProgram.isActive !== undefined ? insertUserProgram.isActive : true,
         completedAt: insertUserProgram.completedAt || null,
