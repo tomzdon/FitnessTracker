@@ -213,6 +213,52 @@ export const programWorkoutsRelations = relations(programWorkouts, ({ one }) => 
   }),
 }));
 
+// User Programs - to track which programs users are currently enrolled in
+export const userPrograms = pgTable("user_programs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  programId: integer("program_id").notNull().references(() => programs.id),
+  startDate: timestamp("start_date").defaultNow().notNull(),
+  currentDay: integer("current_day").default(1),
+  isActive: boolean("is_active").default(true),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertUserProgramSchema = createInsertSchema(userPrograms).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertUserProgram = z.infer<typeof insertUserProgramSchema>;
+export type UserProgram = typeof userPrograms.$inferSelect;
+
+// Define userPrograms relations
+export const userProgramsRelations = relations(userPrograms, ({ one }) => ({
+  user: one(users, {
+    fields: [userPrograms.userId],
+    references: [users.id],
+  }),
+  program: one(programs, {
+    fields: [userPrograms.programId],
+    references: [programs.id],
+  }),
+}));
+
+// Update users relations to include userPrograms
+export const updatedUsersRelations = relations(users, ({ many }) => ({
+  completedWorkouts: many(completedWorkouts),
+  favorites: many(favorites),
+  progressTests: many(progressTests),
+  userPrograms: many(userPrograms),
+}));
+
+// Update programs relations to include userPrograms
+export const updatedProgramsRelations = relations(programs, ({ many }) => ({
+  programWorkouts: many(programWorkouts),
+  userPrograms: many(userPrograms),
+}));
+
 // Session - managed by connect-pg-simple
 export const session = pgTable("session", {
   sid: varchar("sid").primaryKey().notNull(),

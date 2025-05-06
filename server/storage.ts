@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Workout, type InsertWorkout, type Favorite, type InsertFavorite, type CompletedWorkout, type InsertCompletedWorkout, type ProgressTest, type InsertProgressTest, type Program, type InsertProgram, type ProgramWorkout, type InsertProgramWorkout, type Statistics, users, workouts, favorites, completedWorkouts, progressTests, programs, programWorkouts } from "@shared/schema";
+import { type User, type InsertUser, type Workout, type InsertWorkout, type Favorite, type InsertFavorite, type CompletedWorkout, type InsertCompletedWorkout, type ProgressTest, type InsertProgressTest, type Program, type InsertProgram, type ProgramWorkout, type InsertProgramWorkout, type UserProgram, type InsertUserProgram, type Statistics, users, workouts, favorites, completedWorkouts, progressTests, programs, programWorkouts, userPrograms } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import session from "express-session";
@@ -35,6 +35,12 @@ export interface IStorage {
   addProgram(program: InsertProgram): Promise<Program>;
   addProgramWorkout(programWorkout: InsertProgramWorkout): Promise<ProgramWorkout>;
   
+  // User-Program methods
+  getUserPrograms(userId: number): Promise<UserProgram[]>;
+  getActiveUserProgram(userId: number): Promise<{userProgram: UserProgram, program: Program, workouts: Workout[]} | undefined>;
+  assignUserProgram(userProgram: InsertUserProgram): Promise<UserProgram>;
+  updateUserProgramProgress(id: number, data: { currentDay?: number, isActive?: boolean, completedAt?: Date }): Promise<UserProgram>;
+  
   // Favorite methods
   getFavorites(userId: number): Promise<Workout[]>;
   addFavorite(favorite: InsertFavorite): Promise<Favorite>;
@@ -60,6 +66,7 @@ export class MemStorage implements IStorage {
   private workouts: Map<number, Workout>;
   private programs: Map<number, Program>;
   private programWorkouts: Map<number, ProgramWorkout>;
+  private userPrograms: Map<number, UserProgram>;
   private favorites: Map<number, Favorite>;
   private completedWorkouts: Map<number, CompletedWorkout>;
   private progressTests: Map<number, ProgressTest>;
@@ -70,6 +77,7 @@ export class MemStorage implements IStorage {
   private workoutIdCounter: number;
   private programIdCounter: number;
   private programWorkoutIdCounter: number;
+  private userProgramIdCounter: number;
   private favoriteIdCounter: number;
   private completedWorkoutIdCounter: number;
   private progressTestIdCounter: number;
@@ -79,6 +87,7 @@ export class MemStorage implements IStorage {
     this.workouts = new Map();
     this.programs = new Map();
     this.programWorkouts = new Map();
+    this.userPrograms = new Map();
     this.favorites = new Map();
     this.completedWorkouts = new Map();
     this.progressTests = new Map();
@@ -87,6 +96,7 @@ export class MemStorage implements IStorage {
     this.workoutIdCounter = 1;
     this.programIdCounter = 1;
     this.programWorkoutIdCounter = 1;
+    this.userProgramIdCounter = 1;
     this.favoriteIdCounter = 1;
     this.completedWorkoutIdCounter = 1;
     this.progressTestIdCounter = 1;
@@ -261,6 +271,80 @@ export class MemStorage implements IStorage {
     };
     this.programWorkouts.set(id, programWorkout);
     return programWorkout;
+  }
+  
+  // User-Program methods
+  async getUserPrograms(userId: number): Promise<UserProgram[]> {
+    return Array.from(this.userPrograms.values())
+      .filter(userProgram => userProgram.userId === userId);
+  }
+  
+  async getActiveUserProgram(userId: number): Promise<{userProgram: UserProgram, program: Program, workouts: Workout[]} | undefined> {
+    // Find active user program
+    const activeUserProgram = Array.from(this.userPrograms.values())
+      .find(up => up.userId === userId && up.isActive);
+      
+    if (!activeUserProgram) {
+      return undefined;
+    }
+    
+    // Get program
+    const program = this.programs.get(activeUserProgram.programId);
+    if (!program) {
+      return undefined;
+    }
+    
+    // Get workouts for the program
+    const { workouts } = await this.getProgramWithWorkouts(program.id);
+    
+    return {
+      userProgram: activeUserProgram,
+      program,
+      workouts
+    };
+  }
+  
+  async assignUserProgram(userProgram: InsertUserProgram): Promise<UserProgram> {
+    // First, deactivate any active programs for this user
+    const userPrograms = await this.getUserPrograms(userProgram.userId);
+    userPrograms.forEach(up => {
+      if (up.isActive) {
+        up.isActive = false;
+        this.userPrograms.set(up.id, up);
+      }
+    });
+    
+    // Create new user program
+    const id = this.userProgramIdCounter++;
+    const newUserProgram: UserProgram = {
+      ...userProgram,
+      id,
+      startDate: new Date(),
+      currentDay: userProgram.currentDay || 1,
+      isActive: userProgram.isActive !== undefined ? userProgram.isActive : true,
+      completedAt: userProgram.completedAt || null,
+      createdAt: new Date()
+    };
+    
+    this.userPrograms.set(id, newUserProgram);
+    return newUserProgram;
+  }
+  
+  async updateUserProgramProgress(id: number, data: { currentDay?: number, isActive?: boolean, completedAt?: Date }): Promise<UserProgram> {
+    const userProgram = this.userPrograms.get(id);
+    if (!userProgram) {
+      throw new Error('User program not found');
+    }
+    
+    const updatedUserProgram: UserProgram = {
+      ...userProgram,
+      currentDay: data.currentDay !== undefined ? data.currentDay : userProgram.currentDay,
+      isActive: data.isActive !== undefined ? data.isActive : userProgram.isActive,
+      completedAt: data.completedAt !== undefined ? data.completedAt : userProgram.completedAt
+    };
+    
+    this.userPrograms.set(id, updatedUserProgram);
+    return updatedUserProgram;
   }
   
   // Favorite methods
