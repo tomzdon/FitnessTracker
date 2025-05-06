@@ -1,5 +1,5 @@
 import { type User, type InsertUser, type Workout, type InsertWorkout, type Favorite, type InsertFavorite, type CompletedWorkout, type InsertCompletedWorkout, type ProgressTest, type InsertProgressTest, type Program, type InsertProgram, type ProgramWorkout, type InsertProgramWorkout, type UserProgram, type InsertUserProgram, type Statistics, users, workouts, favorites, completedWorkouts, progressTests, programs, programWorkouts, userPrograms } from "@shared/schema";
-import { db } from "./db";
+import { db, pool } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
