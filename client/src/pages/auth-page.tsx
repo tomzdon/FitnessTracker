@@ -9,7 +9,7 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { insertUserSchema } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
-import { Redirect } from "wouter";
+import { Redirect, Link } from "wouter";
 import { Loader2 } from "lucide-react";
 
 // Schema for login form
@@ -155,7 +155,7 @@ export default function AuthPage() {
                 </CardContent>
                 <CardFooter className="flex justify-center">
                   <div className="text-sm text-muted-foreground">
-                    Don't have an account? <button onClick={() => (document.querySelector('[data-value="register"]') as HTMLElement)?.click()} className="pl-1 underline">Register</button>
+                    Don't have an account? <Link href="/register" className="pl-1 underline">Register</Link>
                   </div>
                 </CardFooter>
               </Card>

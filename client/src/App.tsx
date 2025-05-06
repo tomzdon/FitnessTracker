@@ -10,6 +10,7 @@ import Calendar from "@/pages/calendar";
 import Favorites from "@/pages/favorites";
 import Profile from "@/pages/profile";
 import AuthPage from "@/pages/auth-page";
+import RegisterPage from "@/pages/register-page";
 import Header from "@/components/layout/Header";
 import MobileNavigation from "@/components/layout/MobileNavigation";
 import { BackToTop } from "@/components/ui/back-to-top";
@@ -25,6 +26,7 @@ function AppRoutes() {
       <ProtectedRoute path="/favorites" component={Favorites} />
       <ProtectedRoute path="/profile" component={Profile} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/register" component={RegisterPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -34,8 +36,8 @@ function App() {
   // Get current route
   const [location] = useLocation();
   
-  // Check if we're on the auth page
-  const isAuthPage = location === '/auth';
+  // Check if we're on an auth-related page
+  const isAuthPage = location === '/auth' || location === '/register';
 
   return (
     <QueryClientProvider client={queryClient}>
