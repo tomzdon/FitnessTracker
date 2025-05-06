@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Workout } from "@shared/schema";
 import { FavoriteButton } from "@/components/workouts/FavoriteButton";
 import { useQuery } from "@tanstack/react-query";
+import { Separator } from "@/components/ui/separator";
+import { Loader2 } from "lucide-react";
 
 interface WorkoutPreviewModalProps {
   workout: {
@@ -39,6 +41,24 @@ export function WorkoutPreviewModal({
   const workoutId = typeof workout.id === 'string' && workout.id.includes('-') 
     ? parseInt(workout.id.split('-')[1]) 
     : Number(workout.id);
+  
+  // Fetch exercises for this workout
+  const { data: exercises, isLoading: isLoadingExercises } = useQuery({
+    queryKey: ['/api/exercises', workoutId],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`/api/exercises/${workoutId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch exercises');
+        }
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching exercises:', error);
+        return [];
+      }
+    },
+    enabled: isOpen && !!workoutId,
+  });
   
   // Check if this workout is in favorites
   const isFavorite = favorites.some(favorite => favorite.id === workoutId);
@@ -95,55 +115,43 @@ export function WorkoutPreviewModal({
               </p>
             </div>
             
-            {/* Preview animations */}
+            {/* Exercises List */}
             <div className="py-4">
-              <h3 className="text-sm font-medium mb-2">Preview</h3>
-              <div className="grid grid-cols-3 gap-2">
-                <AnimatePresence>
-                  {[1, 2, 3].map((item) => (
+              <h3 className="text-sm font-medium mb-2">Exercises</h3>
+              
+              {isLoadingExercises ? (
+                <div className="flex justify-center items-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+                </div>
+              ) : exercises && exercises.length > 0 ? (
+                <div className="space-y-2">
+                  {exercises.map((exercise, index) => (
                     <motion.div 
-                      key={item}
-                      className="bg-muted rounded-md overflow-hidden relative aspect-square"
-                      initial={{ opacity: 0, y: 10 }}
+                      key={exercise.id || index}
+                      className="p-3 border rounded-md"
+                      initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ delay: item * 0.1 }}
+                      transition={{ delay: index * 0.1 }}
                     >
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <motion.div
-                          animate={{ 
-                            scale: [1, 1.2, 1],
-                          }}
-                          transition={{ 
-                            repeat: Infinity, 
-                            duration: 2,
-                            delay: item * 0.3
-                          }}
-                        >
-                          <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            className="h-8 w-8 text-muted-foreground"
-                            viewBox="0 0 24 24" 
-                            fill="none" 
-                            stroke="currentColor" 
-                            strokeWidth="2" 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round"
-                          >
-                            {item === 1 ? (
-                              <path d="M4 5c15.3 1.3 5.3 20-15.3-1.3" />
-                            ) : item === 2 ? (
-                              <path d="M5.4 15a9 9 0 1 1 13.2 0" />
-                            ) : (
-                              <path d="M4 20l3 -5l2 3l3 -6l2 4l3 -8" />
-                            )}
-                          </svg>
-                        </motion.div>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-medium text-sm">{exercise.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {exercise.sets} sets × {exercise.reps} reps {exercise.weight ? `(${exercise.weight}kg)` : ''}
+                          </p>
+                        </div>
+                        <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                          {index + 1}/{exercises.length}
+                        </div>
                       </div>
                     </motion.div>
                   ))}
-                </AnimatePresence>
-              </div>
+                </div>
+              ) : (
+                <div className="text-center py-2 text-sm text-muted-foreground">
+                  No exercises found. View full details to see more.
+                </div>
+              )}
             </div>
           </div>
           
@@ -158,12 +166,23 @@ export function WorkoutPreviewModal({
                 isFavorite={isFavorite}
               />
             </div>
-            <Button onClick={onStartWorkout}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
-              </svg>
-              Start Workout
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => {
+                onClose();
+                window.location.href = `/workouts/${workoutId}`;
+              }}>
+                View Details
+              </Button>
+              <Button onClick={() => {
+                onClose();
+                window.location.href = `/workouts/${workoutId}`;
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                </svg>
+                Start Workout
+              </Button>
+            </div>
           </div>
         </div>
       </DialogContent>

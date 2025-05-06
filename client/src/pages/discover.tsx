@@ -32,6 +32,11 @@ export default function Discover() {
     setIsPreviewModalOpen(true);
   };
   
+  // Navigate to workout detail page
+  const navigateToWorkoutDetail = (workoutId: number) => {
+    window.location.href = `/workouts/${workoutId}`;
+  };
+  
   // Handle starting the workout
   const handleStartWorkout = () => {
     toast({
