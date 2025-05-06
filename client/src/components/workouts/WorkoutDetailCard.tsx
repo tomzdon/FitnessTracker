@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
 import { Separator } from '@/components/ui/separator';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { type Exercise } from '@shared/schema';
 
 // Local exercise interface that extends the schema one with any additional properties we need
 interface WorkoutExercise {
@@ -39,54 +39,20 @@ interface WorkoutDetailCardProps {
   exercises?: WorkoutExercise[];
 }
 
-export default function WorkoutDetailCard(props: WorkoutDetailCardProps) {
-  const {
-    id,
-    title,
-    description,
-    type,
-    duration,
-    difficulty,
-    scheduledWorkoutId,
-    isCompleted = false,
-    programDay,
-    scheduledDate,
-    onMarkCompleted,
-    exercises = [
-    {
-      id: 1,
-      name: "Squats",
-      sets: 3,
-      reps: 12,
-      restTime: 60,
-      description: "Stand with feet shoulder-width apart, lower your body as if sitting in a chair, then return to starting position."
-    },
-    {
-      id: 2,
-      name: "Push-ups",
-      sets: 3,
-      reps: 10,
-      restTime: 60,
-      description: "Start in plank position with hands shoulder-width apart, lower your chest to the floor, then push back up."
-    },
-    {
-      id: 3,
-      name: "Lunges",
-      sets: 3,
-      reps: 10,
-      restTime: 60,
-      description: "Step forward with one leg, lower your body until both knees are bent at 90 degrees, then return to starting position."
-    },
-    {
-      id: 4,
-      name: "Plank",
-      sets: 3,
-      reps: 1,
-      restTime: 60,
-      description: "Hold forearm plank position with core engaged for 30-60 seconds."
-    }
-  ]
-}) {
+export default function WorkoutDetailCard({
+  id,
+  title,
+  description,
+  type,
+  duration,
+  difficulty,
+  scheduledWorkoutId,
+  isCompleted = false,
+  programDay,
+  scheduledDate,
+  onMarkCompleted,
+  exercises = []
+}: WorkoutDetailCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isExercisesOpen, setIsExercisesOpen] = useState(false);
@@ -145,6 +111,44 @@ export default function WorkoutDetailCard(props: WorkoutDetailCardProps) {
       }
     }
   };
+
+  const defaultExercises: WorkoutExercise[] = [
+    {
+      id: 1,
+      name: "Squats",
+      sets: 3,
+      reps: 12,
+      restTime: 60,
+      description: "Stand with feet shoulder-width apart, lower your body as if sitting in a chair, then return to starting position."
+    },
+    {
+      id: 2,
+      name: "Push-ups",
+      sets: 3,
+      reps: 10,
+      restTime: 60,
+      description: "Start in plank position with hands shoulder-width apart, lower your chest to the floor, then push back up."
+    },
+    {
+      id: 3,
+      name: "Lunges",
+      sets: 3,
+      reps: 10,
+      restTime: 60,
+      description: "Step forward with one leg, lower your body until both knees are bent at 90 degrees, then return to starting position."
+    },
+    {
+      id: 4,
+      name: "Plank",
+      sets: 3,
+      reps: 1,
+      restTime: 60,
+      description: "Hold forearm plank position with core engaged for 30-60 seconds."
+    }
+  ];
+
+  // Use provided exercises or fall back to default exercises if empty
+  const displayExercises = exercises.length > 0 ? exercises : defaultExercises;
 
   return (
     <Card className={`overflow-hidden ${isCompleted ? 'border-green-200' : ''}`}>
@@ -226,7 +230,7 @@ export default function WorkoutDetailCard(props: WorkoutDetailCardProps) {
             variant="ghost" 
             className="w-full flex justify-between py-2 rounded-none"
           >
-            <span className="font-medium">Exercise List ({exercises.length})</span>
+            <span className="font-medium">Exercise List ({displayExercises.length})</span>
             {isExercisesOpen ? (
               <ChevronUp className="h-5 w-5" />
             ) : (
@@ -236,7 +240,7 @@ export default function WorkoutDetailCard(props: WorkoutDetailCardProps) {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="px-4 pb-4 divide-y">
-            {exercises.map((exercise, index) => (
+            {displayExercises.map((exercise, index) => (
               <div key={exercise.id} className="py-3">
                 <div className="flex justify-between items-start mb-1">
                   <h4 className="font-medium text-sm">{index + 1}. {exercise.name}</h4>
@@ -266,7 +270,7 @@ export default function WorkoutDetailCard(props: WorkoutDetailCardProps) {
         )}
         
         {scheduledWorkoutId && (
-          <Badge variant={isCompleted ? "success" : "outline"} className="ml-auto">
+          <Badge variant="outline" className={`ml-auto ${isCompleted ? 'bg-green-50 text-green-700 border-green-200' : ''}`}>
             {isCompleted ? "Completed" : "Scheduled"}
           </Badge>
         )}
