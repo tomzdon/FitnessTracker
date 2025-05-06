@@ -245,6 +245,7 @@ export class MemStorage implements IStorage {
         sets: 3,
         reps: 12,
         restTime: 60,
+        weight: "70",
         description: "Stand with feet shoulder-width apart, lower your body as if sitting in a chair, then return to starting position.",
         order: 1,
         createdAt: new Date()
@@ -256,6 +257,7 @@ export class MemStorage implements IStorage {
         sets: 3,
         reps: 10,
         restTime: 60,
+        weight: null,
         description: "Start in plank position with hands shoulder-width apart, lower your chest to the floor, then push back up.",
         order: 2,
         createdAt: new Date()
@@ -267,6 +269,7 @@ export class MemStorage implements IStorage {
         sets: 3,
         reps: 10,
         restTime: 60,
+        weight: "20",
         description: "Step forward with one leg, lower your body until both knees are bent at 90 degrees, then return to starting position.",
         order: 3,
         createdAt: new Date()
@@ -278,6 +281,7 @@ export class MemStorage implements IStorage {
         sets: 3,
         reps: 1,
         restTime: 60,
+        weight: null,
         description: "Hold forearm plank position with core engaged for 30-60 seconds.",
         order: 4,
         createdAt: new Date()

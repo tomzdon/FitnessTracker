@@ -71,6 +71,7 @@ export const exercises = pgTable("exercises", {
   sets: integer("sets").notNull(),
   reps: integer("reps").notNull(),
   restTime: integer("rest_time").notNull(), // rest time in seconds
+  weight: text("weight"), // weight in kg
   order: integer("order").notNull(), // order in the workout
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

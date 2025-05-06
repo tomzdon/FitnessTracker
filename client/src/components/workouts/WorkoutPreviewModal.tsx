@@ -125,7 +125,7 @@ export function WorkoutPreviewModal({
                 </div>
               ) : exercises && exercises.length > 0 ? (
                 <div className="space-y-2">
-                  {exercises.map((exercise, index) => (
+                  {exercises.map((exercise: { id: number, name: string, sets: number, reps: number, weight?: string | number }, index: number) => (
                     <motion.div 
                       key={exercise.id || index}
                       className="p-3 border rounded-md"
