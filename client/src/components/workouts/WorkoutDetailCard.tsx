@@ -20,6 +20,7 @@ interface WorkoutExercise {
   sets: number;
   reps: number;
   restTime: number;
+  weight?: string | number | null;
   description?: string;
   order?: number; // Optional property
 }
@@ -119,6 +120,7 @@ export default function WorkoutDetailCard({
       sets: 3,
       reps: 12,
       restTime: 60,
+      weight: "70",
       description: "Stand with feet shoulder-width apart, lower your body as if sitting in a chair, then return to starting position."
     },
     {
@@ -127,6 +129,7 @@ export default function WorkoutDetailCard({
       sets: 3,
       reps: 10,
       restTime: 60,
+      weight: null,
       description: "Start in plank position with hands shoulder-width apart, lower your chest to the floor, then push back up."
     },
     {
@@ -135,6 +138,7 @@ export default function WorkoutDetailCard({
       sets: 3,
       reps: 10,
       restTime: 60,
+      weight: "20",
       description: "Step forward with one leg, lower your body until both knees are bent at 90 degrees, then return to starting position."
     },
     {
@@ -143,6 +147,7 @@ export default function WorkoutDetailCard({
       sets: 3,
       reps: 1,
       restTime: 60,
+      weight: null,
       description: "Hold forearm plank position with core engaged for 30-60 seconds."
     }
   ];
@@ -246,6 +251,7 @@ export default function WorkoutDetailCard({
                   <h4 className="font-medium text-sm">{index + 1}. {exercise.name}</h4>
                   <span className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-800">
                     {exercise.sets} × {exercise.reps} {exercise.reps === 1 ? 'rep' : 'reps'}
+                    {exercise.weight ? ` (${exercise.weight}kg)` : ''}
                   </span>
                 </div>
                 {exercise.description && (

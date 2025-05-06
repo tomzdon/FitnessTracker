@@ -6,7 +6,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function WorkoutDetailPage() {
   const { toast } = useToast();
-  const [, params] = useRoute<{ id: string }>('/workout/:id');
+  const [, params] = useRoute<{ id: string }>('/workouts/:id');
   const workoutId = params?.id;
 
   // Fetch workout details
@@ -33,49 +33,7 @@ export default function WorkoutDetailPage() {
         const response = await fetch(`/api/exercises/${workoutId}`);
         if (!response.ok) {
           console.error('Error fetching exercises:', response.statusText);
-          // Use fallback mock data if the API fails
-          return [
-            {
-              id: 1,
-              workoutId: parseInt(workoutId),
-              name: "Squats",
-              sets: 3,
-              reps: 12,
-              restTime: 60,
-              description: "Stand with feet shoulder-width apart, lower your body as if sitting in a chair, then return to starting position.",
-              order: 1
-            },
-            {
-              id: 2,
-              workoutId: parseInt(workoutId),
-              name: "Push-ups",
-              sets: 3,
-              reps: 10,
-              restTime: 60,
-              description: "Start in plank position with hands shoulder-width apart, lower your chest to the floor, then push back up.",
-              order: 2
-            },
-            {
-              id: 3,
-              workoutId: parseInt(workoutId),
-              name: "Lunges",
-              sets: 3,
-              reps: 10,
-              restTime: 60,
-              description: "Step forward with one leg, lower your body until both knees are bent at 90 degrees, then return to starting position.",
-              order: 3
-            },
-            {
-              id: 4,
-              workoutId: parseInt(workoutId),
-              name: "Plank",
-              sets: 3,
-              reps: 1,
-              restTime: 60,
-              description: "Hold forearm plank position with core engaged for 30-60 seconds.",
-              order: 4
-            }
-          ];
+          throw new Error('Failed to fetch exercises');
         }
         return response.json();
       } catch (error) {
