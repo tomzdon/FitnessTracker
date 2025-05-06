@@ -267,9 +267,14 @@ export default function AuthPage() {
                     </form>
                   </Form>
                 </CardContent>
-                <CardFooter className="flex justify-center">
-                  <div className="text-sm text-muted-foreground">
+                <CardFooter className="flex flex-col gap-4 justify-center">
+                  <div className="text-sm text-center text-muted-foreground">
                     Already have an account? <button onClick={() => (document.querySelector('[data-value="login"]') as HTMLElement)?.click()} className="pl-1 underline">Login</button>
+                  </div>
+                  <div className="text-center">
+                    <Link href="/register" className="text-sm text-primary font-medium hover:underline">
+                      Try our new step-by-step registration →
+                    </Link>
                   </div>
                 </CardFooter>
               </Card>
