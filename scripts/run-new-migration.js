@@ -57,6 +57,29 @@ async function runMigration() {
     `);
     console.log('Created indexes for scheduled_workouts table');
     
+    // Create exercises table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS exercises (
+        id SERIAL PRIMARY KEY,
+        workout_id INTEGER NOT NULL REFERENCES workouts(id),
+        name TEXT NOT NULL,
+        description TEXT,
+        sets INTEGER NOT NULL,
+        reps INTEGER NOT NULL,
+        rest_time INTEGER NOT NULL,
+        weight TEXT,
+        "order" INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW() NOT NULL
+      );
+    `);
+    console.log('Created exercises table');
+    
+    // Create index for exercises
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_exercises_workout_id ON exercises(workout_id);
+    `);
+    console.log('Created index for exercises table');
+    
     console.log('Migration completed successfully');
   } catch (error) {
     console.error('Migration failed:', error);
