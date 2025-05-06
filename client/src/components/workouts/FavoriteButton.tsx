@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { apiRequest, queryClient } from '@/lib/queryClient';
+import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
 interface FavoriteButtonProps {
@@ -19,7 +19,13 @@ export function FavoriteButton({
   variant = 'ghost'
 }: FavoriteButtonProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
+
+  // Update local state when prop changes
+  useEffect(() => {
+    setIsFavorite(initialIsFavorite);
+  }, [initialIsFavorite]);
 
   // Add to favorites mutation
   const addFavoriteMutation = useMutation({
@@ -33,6 +39,7 @@ export function FavoriteButton({
         title: 'Added to favorites',
         description: 'Workout has been added to your favorites',
       });
+      // Force refetch the favorites list
       queryClient.invalidateQueries({ queryKey: ['/api/favourites'] });
     },
     onError: (error: Error) => {
@@ -57,6 +64,7 @@ export function FavoriteButton({
         title: 'Removed from favorites',
         description: 'Workout has been removed from your favorites',
       });
+      // Force refetch the favorites list
       queryClient.invalidateQueries({ queryKey: ['/api/favourites'] });
     },
     onError: (error: Error) => {

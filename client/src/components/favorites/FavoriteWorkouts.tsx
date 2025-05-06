@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bookmark, Dumbbell, Clock, RefreshCcw, Loader2 } from 'lucide-react';
 import { Link } from 'wouter';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,37 +101,47 @@ export function FavoriteWorkouts() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {favorites.map((workout: Workout) => (
-          <Card key={workout.id} className="overflow-hidden">
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-lg">{workout.title}</CardTitle>
-                <FavoriteButton workoutId={workout.id} isFavorite={true} />
-              </div>
-              <CardDescription>{workout.type}</CardDescription>
-            </CardHeader>
-            <CardContent className="pb-2">
-              <p className="text-sm line-clamp-2">{workout.description}</p>
-            </CardContent>
-            <CardFooter className="flex justify-between pt-2 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                <span>{workout.duration} min</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Dumbbell className="h-4 w-4" />
-                <span>{workout.difficulty}</span>
-              </div>
-              <Button 
-                asChild 
-                size="sm" 
-                variant="outline"
-              >
-                <Link href={`/workouts/${workout.id}`}>View</Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+        {favorites.map((workout: Workout) => {
+          const handleRemove = () => {
+            // This is just a placeholder to help with state management
+            // The actual removal happens in the FavoriteButton component
+          };
+          
+          return (
+            <Card key={workout.id} className="overflow-hidden">
+              <CardHeader className="pb-2">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg">{workout.title}</CardTitle>
+                  <FavoriteButton 
+                    workoutId={workout.id} 
+                    isFavorite={true} 
+                  />
+                </div>
+                <CardDescription>{workout.type}</CardDescription>
+              </CardHeader>
+              <CardContent className="pb-2">
+                <p className="text-sm line-clamp-2">{workout.description}</p>
+              </CardContent>
+              <CardFooter className="flex justify-between pt-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  <span>{workout.duration} min</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Dumbbell className="h-4 w-4" />
+                  <span>{workout.difficulty}</span>
+                </div>
+                <Button 
+                  asChild 
+                  size="sm" 
+                  variant="outline"
+                >
+                  <Link href={`/workouts/${workout.id}`}>View</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
