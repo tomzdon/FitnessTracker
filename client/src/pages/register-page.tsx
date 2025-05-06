@@ -77,11 +77,6 @@ export default function RegisterPage() {
   
   const { user, registerMutation } = useAuth();
   
-  // Redirect if already logged in
-  if (user) {
-    return <Redirect to="/" />;
-  }
-  
   // Setup forms for each step
   const accountForm = useForm<AccountInfoFormValues>({
     resolver: zodResolver(accountInfoSchema),
@@ -155,6 +150,11 @@ export default function RegisterPage() {
       });
     }
   };
+  
+  // Handle redirect inside the render cycle, after all hooks have run
+  if (user) {
+    return <Redirect to="/" />;
+  }
   
   return (
     <div className="flex min-h-screen">
