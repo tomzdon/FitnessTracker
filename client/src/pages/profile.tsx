@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle, Clock, Dumbbell } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -86,15 +86,35 @@ export default function Profile() {
     queryKey: ['/api/statistics'],
   });
   
-  // Fetch user completed workouts
-  const { data: completedWorkouts = [] } = useQuery<any[]>({
+  // Fetch user completed workouts with workout details
+  const { data: completedWorkouts = [], isLoading: isLoadingWorkouts } = useQuery<any[]>({
     queryKey: ['/api/completedWorkouts'],
     queryFn: async () => {
       const response = await fetch('/api/completedWorkouts');
       if (!response.ok) {
         throw new Error('Failed to fetch completed workouts');
       }
-      return response.json();
+      const completed = await response.json();
+      
+      // Fetch workout details for each completed workout
+      const workoutsWithDetails = await Promise.all(
+        completed.map(async (workout: any) => {
+          try {
+            const detailsResponse = await fetch(`/api/workouts/${workout.workoutId}`);
+            if (!detailsResponse.ok) return { ...workout, details: null };
+            const details = await detailsResponse.json();
+            return {
+              ...workout,
+              details
+            };
+          } catch (error) {
+            console.error('Error fetching workout details:', error);
+            return { ...workout, details: null };
+          }
+        })
+      );
+      
+      return workoutsWithDetails;
     }
   });
 
@@ -406,14 +426,62 @@ export default function Profile() {
         </TabsContent>
         
         <TabsContent value="workout-history" className="mt-6">
-          {completedWorkouts.length === 0 ? (
+          {isLoadingWorkouts ? (
+            <div className="bg-white rounded-lg p-8 shadow-sm flex justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+            </div>
+          ) : completedWorkouts.length === 0 ? (
             <EmptyWorkoutHistory />
           ) : (
             <div className="bg-white rounded-lg p-8 shadow-sm">
               <h2 className="text-xl font-semibold mb-4">Your Workout History</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Workout history items would go here */}
-                <p>Workout history will appear here.</p>
+              <p className="text-gray-500 mb-6">You've completed {completedWorkouts.length} workouts. Keep up the good work!</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {completedWorkouts.map((workout: any) => (
+                  <div 
+                    key={workout.id} 
+                    className="border rounded-lg p-4 bg-green-50 border-green-200"
+                  >
+                    <div className="flex items-start mb-2">
+                      <div className="bg-green-100 rounded-full p-2 mr-3">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium">
+                          {workout.details?.title || "Workout"}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          {new Date(workout.completedAt).toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {workout.details?.description && (
+                      <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                        {workout.details.description}
+                      </p>
+                    )}
+                    
+                    <div className="flex items-center mt-3 text-sm text-gray-500">
+                      <div className="flex items-center mr-4">
+                        <Clock className="h-3.5 w-3.5 mr-1" />
+                        <span>{workout.details?.duration || "--"} min</span>
+                      </div>
+                      {workout.details?.type && (
+                        <div className="flex items-center">
+                          <Dumbbell className="h-3.5 w-3.5 mr-1" />
+                          <span>{workout.details.type}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
