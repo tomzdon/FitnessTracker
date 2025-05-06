@@ -5,6 +5,7 @@ import { getQueryFn } from '@/lib/queryClient';
 import { Program, Workout } from '@shared/schema';
 import { WorkoutPreviewCard } from '@/components/workouts/WorkoutPreviewCard';
 import { WorkoutPreviewModal } from '@/components/workouts/WorkoutPreviewModal';
+import { ProgramCard } from '@/components/programs/ProgramCard';
 import { useToast } from '@/hooks/use-toast';
 
 // Content categories
@@ -46,86 +47,55 @@ export default function Discover() {
     queryFn: getQueryFn({ on401: 'returnNull' }),
   });
 
-  // Fetch programs - temporarily commented out until the database is properly set up
-  // const programsQuery = useQuery<Program[]>({
-  //   queryKey: ['/api/programs'],
-  //   queryFn: getQueryFn({ on401: 'returnNull' }),
-  // });
-
-  // Mock programs data for now since we can't access the database
-  const mockPrograms = [
-    {
-      id: 1,
-      title: "MAX Program",
-      description: "Complete full-body transformation in 50 days",
-      imageUrl: "https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=1000&auto=format&fit=crop",
-      difficulty: "intermediate",
-      duration: 50,
-      category: "strength",
-      createdAt: new Date()
-    }
-  ];
+  // Fetch programs
+  const programsQuery = useQuery<Program[]>({
+    queryKey: ['/api/programs'],
+    queryFn: getQueryFn({ on401: 'returnNull' }),
+  });
 
   // Loading state
-  const isLoading = workoutsQuery.isLoading; // || programsQuery.isLoading;
-  const hasError = workoutsQuery.error; // || programsQuery.error;
+  const isLoading = workoutsQuery.isLoading || programsQuery.isLoading;
+  const hasError = workoutsQuery.error || programsQuery.error;
 
   // Filter content based on active category
   let displayContent: any[] = [];
+  let programsContent: any[] = [];
+  let workoutsContent: any[] = [];
   
-  if (workoutsQuery.data) { // && programsQuery.data) {
+  // Prepare programs content if available
+  if (programsQuery.data) {
+    programsContent = programsQuery.data.map(program => ({
+      id: `program-${program.id}`,
+      type: 'program',
+      program: program, // Pass the whole program for ProgramCard
+    }));
+  }
+  
+  // Prepare workouts content if available
+  if (workoutsQuery.data) {
+    workoutsContent = workoutsQuery.data.map(workout => ({
+      id: `workout-${workout.id}`,
+      type: 'workout',
+      title: workout.title,
+      subtitle: workout.subtitle,
+      description: workout.description,
+      imageUrl: workout.imageUrl || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop',
+      day: workout.day,
+      totalDays: workout.totalDays,
+      duration: workout.duration || 30, // Default value if duration not provided
+    }));
+  }
+  
+  if (workoutsQuery.data && programsQuery.data) {
     if (activeCategory === 'all') {
       // Combine all content types
-      displayContent = [
-        ...mockPrograms.map(program => ({
-          id: `program-${program.id}`,
-          type: 'program',
-          title: program.title,
-          subtitle: program.description,
-          description: program.description,
-          imageUrl: program.imageUrl || 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=1000&auto=format&fit=crop',
-          totalDays: program.duration, 
-          day: 1, // Default value for now
-          duration: 45, // Default value for now
-        })),
-        ...workoutsQuery.data.map(workout => ({
-          id: `workout-${workout.id}`,
-          type: 'workout',
-          title: workout.title,
-          subtitle: workout.subtitle,
-          description: workout.description,
-          imageUrl: workout.imageUrl || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop',
-          day: workout.day,
-          totalDays: workout.totalDays,
-          duration: workout.duration || 30, // Default value if duration not provided
-        }))
-      ];
+      displayContent = [...programsContent, ...workoutsContent];
     } else if (activeCategory === 'programs') {
       // Show only programs
-      displayContent = mockPrograms.map(program => ({
-        id: `program-${program.id}`,
-        type: 'program',
-        title: program.title,
-        subtitle: program.description,
-        description: program.description,
-        imageUrl: program.imageUrl || 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?q=80&w=1000&auto=format&fit=crop',
-        totalDays: program.duration,
-        day: 1, // Default value for now
-        duration: 45, // Default value for now
-      }));
+      displayContent = programsContent;
     } else if (activeCategory === 'workouts') {
       // Show only workouts
-      displayContent = workoutsQuery.data.map(workout => ({
-        id: `workout-${workout.id}`,
-        type: 'workout',
-        title: workout.title,
-        subtitle: workout.subtitle,
-        description: workout.description,
-        imageUrl: workout.imageUrl || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop',
-        day: workout.day,
-        totalDays: workout.totalDays,
-        duration: workout.duration || 30, // Default value if duration not provided
-      }));
+      displayContent = workoutsContent;
     } else {
       // Other categories would have their own logic here
       displayContent = [];
@@ -208,11 +178,18 @@ export default function Discover() {
             {/* Carousel/Content cards */}
             <div className="flex overflow-x-auto pb-4 space-x-4 -mx-1 px-1 hide-scrollbar">
               {displayContent.map((item) => (
-                <WorkoutPreviewCard 
-                  key={item.id}
-                  workout={item}
-                  onClick={() => handleWorkoutClick(item)}
-                />
+                item.type === 'program' ? (
+                  <ProgramCard 
+                    key={item.id}
+                    program={item.program}
+                  />
+                ) : (
+                  <WorkoutPreviewCard 
+                    key={item.id}
+                    workout={item}
+                    onClick={() => handleWorkoutClick(item)}
+                  />
+                )
               ))}
               
               {displayContent.length > 3 && (
