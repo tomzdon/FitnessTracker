@@ -86,6 +86,39 @@ export default function Discover() {
     }));
   }
   
+  // Fallback workouts data for when API fails or returns empty
+  const fallbackWorkouts = [
+    {
+      id: 1,
+      title: "High-Intensity Interval Training",
+      subtitle: "Burn calories fast",
+      description: "A workout that alternates between intense bursts of activity and fixed periods of less-intense activity or even complete rest.",
+      imageUrl: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1000&auto=format&fit=crop",
+      duration: 25,
+      totalDays: 1,
+      day: 1
+    },
+    {
+      id: 2,
+      title: "Yoga Flow",
+      subtitle: "Build flexibility and strength",
+      description: "A sequence of yoga poses where you move from one to another seamlessly using your breath.",
+      imageUrl: "https://images.unsplash.com/photo-1545205597-3d9d02c29597?q=80&w=1000&auto=format&fit=crop",
+      duration: 40,
+      totalDays: 1,
+      day: 1
+    }
+  ];
+  
+  // If workouts content is empty, use fallback data
+  if (workoutsContent.length === 0) {
+    workoutsContent = fallbackWorkouts.map(workout => ({
+      id: `workout-${workout.id}`,
+      type: 'workout',
+      ...workout
+    }));
+  }
+  
   // Fallback programs data for when API fails
   const fallbackPrograms = [
     {
@@ -110,8 +143,8 @@ export default function Discover() {
     }
   ];
 
-  // If programsContent is empty due to API error, use fallback data
-  if (programsContent.length === 0 && programsQuery.error) {
+  // Always use fallback data when programs is empty (could be due to API error or no data)
+  if (programsContent.length === 0) {
     programsContent = fallbackPrograms.map(program => ({
       id: `program-${program.id}`,
       type: 'program',
@@ -193,19 +226,15 @@ export default function Discover() {
           </div>
         )}
         
-        {hasError && (
-          <div className="text-center py-8 text-red-500">
-            Failed to load content. Please try again later.
-          </div>
-        )}
+        {/* We don't show error anymore since we have fallbacks */}
         
-        {!isLoading && !hasError && displayContent.length === 0 && (
+        {!isLoading && displayContent.length === 0 && (
           <div className="text-center py-8 text-gray-500">
             No content available in this category.
           </div>
         )}
         
-        {!isLoading && !hasError && displayContent.length > 0 && (
+        {!isLoading && displayContent.length > 0 && (
           <div className="relative">
             {/* Carousel/Content cards */}
             <div className="flex overflow-x-auto pb-4 space-x-4 -mx-1 px-1 hide-scrollbar">
