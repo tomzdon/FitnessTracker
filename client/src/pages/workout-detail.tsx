@@ -29,42 +29,11 @@ export default function WorkoutDetailPage() {
     queryFn: async () => {
       if (!workoutId) return [];
       
-      // In a real app, you would fetch exercises from the backend
-      // For now, we return mock data that matches the component's expectations
-      return [
-        {
-          id: 1,
-          name: "Squats",
-          sets: 3,
-          reps: 12,
-          restTime: 60,
-          description: "Stand with feet shoulder-width apart, lower your body as if sitting in a chair, then return to starting position."
-        },
-        {
-          id: 2,
-          name: "Push-ups",
-          sets: 3,
-          reps: 10,
-          restTime: 60,
-          description: "Start in plank position with hands shoulder-width apart, lower your chest to the floor, then push back up."
-        },
-        {
-          id: 3,
-          name: "Lunges",
-          sets: 3,
-          reps: 10,
-          restTime: 60,
-          description: "Step forward with one leg, lower your body until both knees are bent at 90 degrees, then return to starting position."
-        },
-        {
-          id: 4,
-          name: "Plank",
-          sets: 3,
-          reps: 1,
-          restTime: 60,
-          description: "Hold forearm plank position with core engaged for 30-60 seconds."
-        }
-      ];
+      const response = await fetch(`/api/exercises/${workoutId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch exercises');
+      }
+      return response.json();
     },
     enabled: !!workoutId
   });

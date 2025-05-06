@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Workout, type InsertWorkout, type Favorite, type InsertFavorite, type CompletedWorkout, type InsertCompletedWorkout, type ProgressTest, type InsertProgressTest, type Program, type InsertProgram, type ProgramWorkout, type InsertProgramWorkout, type UserProgram, type InsertUserProgram, type ScheduledWorkout, type InsertScheduledWorkout, type Statistics, users, workouts, favorites, completedWorkouts, progressTests, programs, programWorkouts, userPrograms, scheduledWorkouts } from "@shared/schema";
+import { type User, type InsertUser, type Workout, type InsertWorkout, type Favorite, type InsertFavorite, type CompletedWorkout, type InsertCompletedWorkout, type ProgressTest, type InsertProgressTest, type Program, type InsertProgram, type ProgramWorkout, type InsertProgramWorkout, type UserProgram, type InsertUserProgram, type ScheduledWorkout, type InsertScheduledWorkout, type Statistics, type Exercise, users, workouts, favorites, completedWorkouts, progressTests, programs, programWorkouts, userPrograms, scheduledWorkouts, exercises } from "@shared/schema";
 import { db, pool } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import session from "express-session";
@@ -29,7 +29,7 @@ export interface IStorage {
   addWorkout(workout: InsertWorkout): Promise<Workout>;
   
   // Exercise methods
-  getExercisesByWorkoutId(workoutId: number): Promise<any[]>;
+  getExercisesByWorkoutId(workoutId: number): Promise<Exercise[]>;
   
   // Program methods
   getPrograms(): Promise<Program[]>;
@@ -234,7 +234,7 @@ export class MemStorage implements IStorage {
   }
   
   // Exercise methods
-  async getExercisesByWorkoutId(workoutId: number): Promise<any[]> {
+  async getExercisesByWorkoutId(workoutId: number): Promise<Exercise[]> {
     // In memory implementation - we'll return mock exercises
     // In a real application with a database, this would fetch from the exercises table
     return [
@@ -690,6 +690,11 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return workout;
+  }
+  
+  // Exercise methods
+  async getExercisesByWorkoutId(workoutId: number): Promise<any[]> {
+    return db.select().from(exercises).where(eq(exercises.workoutId, workoutId)).orderBy(exercises.order);
   }
   
   // Program methods
