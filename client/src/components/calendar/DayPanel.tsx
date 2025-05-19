@@ -107,34 +107,39 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
           {workoutDetails.map((workout: any) => (
             <div 
               key={workout.scheduledWorkoutId} 
-              className={`border rounded-lg p-4 ${workout.isCompleted ? 'bg-green-50 border-green-200' : 'bg-gray-50'}`}
+              className={`border rounded-lg p-4 relative ${workout.isCompleted ? 'bg-green-50 border-green-200' : 'bg-white'}`}
             >
-              <div className="flex justify-between items-start mb-3">
-                <div>
-                  <div className="flex items-center">
-                    {workout.isCompleted && (
-                      <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                    )}
-                    <h4 className="font-medium">{workout.title}</h4>
-                  </div>
-                  <div className="flex items-center text-gray-500 text-sm mt-1">
-                    <Clock className="h-3.5 w-3.5 mr-1" />
-                    <span>{workout.duration} minutes</span>
-                    {workout.programDay && (
-                      <>
-                        <span className="mx-1">•</span>
-                        <Calendar className="h-3.5 w-3.5 mr-1" />
-                        <span>Day {workout.programDay}</span>
-                      </>
-                    )}
-                  </div>
+              <h4 className="font-medium text-lg mb-2">{workout.title}</h4>
+              
+              <div className="flex items-center space-x-2 mb-1">
+                <div className="flex items-center">
+                  <Clock className="h-4 w-4 mr-1 text-gray-500" />
+                  <span className="text-gray-700">
+                    {workout.duration} minutes
+                  </span>
                 </div>
+                
+                <span className="text-gray-400">•</span>
+                
+                <div className="flex items-center">
+                  <Calendar className="h-4 w-4 mr-1 text-gray-500" />
+                  <span className="text-gray-700">
+                    Day {workout.programDay || 1}
+                  </span>
+                </div>
+              </div>
+              
+              {workout.description && (
+                <p className="text-sm text-gray-600 mb-3">{workout.description}</p>
+              )}
+              
+              <div className="absolute top-4 right-4">
                 <Button 
-                  variant={workout.isCompleted ? "outline" : "default"}
+                  variant={workout.isCompleted ? "default" : "default"}
                   size="sm"
                   onClick={() => handleToggleComplete(workout.scheduledWorkoutId, workout.isCompleted)}
                   disabled={markCompletedMutation.isPending}
-                  className={workout.isCompleted ? 'border-green-200 text-green-700 hover:bg-green-100 hover:text-green-800' : ''}
+                  className={workout.isCompleted ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
                 >
                   {markCompletedMutation.isPending ? (
                     <div className="flex items-center">
@@ -144,7 +149,7 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
                   ) : workout.isCompleted ? (
                     <>
                       <CheckCircle className="h-4 w-4 mr-1" />
-                      <span>Completed</span>
+                      <span>Done</span>
                     </>
                   ) : (
                     <>
@@ -154,9 +159,6 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
                   )}
                 </Button>
               </div>
-              {workout.description && (
-                <p className="text-sm text-gray-600">{workout.description}</p>
-              )}
             </div>
           ))}
         </div>
