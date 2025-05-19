@@ -598,6 +598,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Endpoint do naprawy brakującej daty w zaplanowanym treningu
+  apiRouter.put('/scheduled-workouts/:id/fix', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user!.id;
+      
+      // Pobierz obecny trening
+      const allWorkouts = await storage.getScheduledWorkouts(userId);
+      const workoutToFix = allWorkouts.find(w => w.id === id);
+      
+      if (!workoutToFix) {
+        return res.status(404).json({ message: 'Scheduled workout not found or not owned by user' });
+      }
+      
+      // Wykonaj zapytanie SQL, które naprawia brakującą datę
+      await db
+        .update(scheduledWorkouts)
+        .set({ 
+          scheduledDate: req.body.scheduledDate ? new Date(req.body.scheduledDate) : new Date('2025-05-22T12:00:00.000Z') 
+        })
+        .where(eq(scheduledWorkouts.id, id));
+      
+      res.status(200).json({ message: 'Workout fixed successfully' });
+    } catch (error) {
+      console.error('Error fixing scheduled workout:', error);
+      res.status(500).json({ message: 'Failed to fix scheduled workout' });
+    }
+  });
+
   apiRouter.put('/scheduled-workouts/:id/complete', isAuthenticated, async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
