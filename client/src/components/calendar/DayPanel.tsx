@@ -59,16 +59,54 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
       return await res.json();
     },
     onSuccess: (data) => {
-      const status = data.completedWorkout ? 'completed' : 'marked as incomplete';
+      // Immediate update of the local state to reflect the change without waiting for a refetch
+      // This will cause the UI to update instantly
+      const updatedWorkout = data.updatedWorkout;
+      
+      if (updatedWorkout) {
+        // Immediately update the cache for this specific scheduled workout
+        queryClient.setQueryData(['/api/workout-details', workouts.map(w => w.workoutId).join(',')], 
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            
+            return oldData.map((workout: any) => {
+              if (workout.scheduledWorkoutId === updatedWorkout.id) {
+                return {
+                  ...workout,
+                  isCompleted: updatedWorkout.isCompleted
+                };
+              }
+              return workout;
+            });
+          }
+        );
+        
+        // Update the scheduled workouts for the current date
+        queryClient.setQueryData(['/api/scheduled-workouts/date', selectedDate.toISOString().split('T')[0]], 
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            
+            return oldData.map((sw: any) => {
+              if (sw.id === updatedWorkout.id) {
+                return updatedWorkout;
+              }
+              return sw;
+            });
+          }
+        );
+      }
+      
+      const status = updatedWorkout && updatedWorkout.isCompleted ? 'completed' : 'marked as incomplete';
       toast({
         title: `Workout ${status}`,
-        description: data.completedWorkout 
+        description: updatedWorkout && updatedWorkout.isCompleted 
           ? "Great job! Your progress has been updated." 
           : "Workout has been marked as incomplete",
       });
       
-      // Invalidate all relevant queries to update the UI
+      // Also invalidate queries to ensure all data stays in sync
       queryClient.invalidateQueries({ queryKey: ['/api/scheduled-workouts/date'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/scheduled-workouts/range'] });
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
       queryClient.invalidateQueries({ queryKey: ['/api/active-program'] });
       queryClient.invalidateQueries({ queryKey: ['/api/completedWorkouts'] });

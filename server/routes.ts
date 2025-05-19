@@ -635,7 +635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 { currentDay: nextDay }
               );
             }
-          } else if (updatedWorkout.programDay > activeProgram.userProgram.currentDay) {
+          } else if (activeProgram.userProgram.currentDay !== null && updatedWorkout.programDay > activeProgram.userProgram.currentDay) {
             // This is a future workout, user is skipping ahead
             // Let's update progress to this day since they completed it
             console.log(`User completed a future workout (day ${updatedWorkout.programDay}), updating current day.`);
