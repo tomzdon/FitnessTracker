@@ -1,28 +1,66 @@
-const { Pool } = require('pg');
+// Ten skrypt dodaje kolumnę scheduled_date do tabeli completed_workouts,
+// co pozwoli na śledzenie ukończonych treningów niezależnie dla każdej daty.
 
-// Prosty skrypt dodający kolumnę scheduled_date do tabeli completed_workouts
+import { Pool } from 'pg';
+import * as dotenv from 'dotenv';
+
+// Załaduj zmienne środowiskowe
+dotenv.config();
+
 async function main() {
+  console.log('Rozpoczynam migrację: dodawanie kolumny scheduled_date do tabeli completed_workouts...');
+  
+  // Utwórz nowy basen połączeń
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+  });
+  
   try {
-    // Połącz z bazą danych używając zmiennej środowiskowej DATABASE_URL
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-    });
-
-    console.log('Dodaję kolumnę scheduled_date do tabeli completed_workouts...');
-    
-    // Wykonaj zapytanie do bazy danych
-    await pool.query(`
-      ALTER TABLE completed_workouts
-      ADD COLUMN IF NOT EXISTS scheduled_date TIMESTAMP;
+    // Sprawdź, czy kolumna scheduled_date istnieje w tabeli completed_workouts
+    const checkColumn = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'completed_workouts' AND column_name = 'scheduled_date'
     `);
     
-    console.log('Kolumna została dodana pomyślnie!');
-    await pool.end();
+    // Jeśli kolumna nie istnieje, dodaj ją
+    if (checkColumn.rows.length === 0) {
+      console.log('Kolumna scheduled_date nie istnieje. Dodawanie...');
+      
+      // Dodanie kolumny
+      await pool.query(`
+        ALTER TABLE completed_workouts 
+        ADD COLUMN scheduled_date TIMESTAMP
+      `);
+      
+      // Aktualizacja istniejących wpisów
+      console.log('Aktualizacja istniejących wpisów...');
+      await pool.query(`
+        UPDATE completed_workouts 
+        SET scheduled_date = completed_at 
+        WHERE scheduled_date IS NULL
+      `);
+      
+      console.log('Migracja zakończona pomyślnie!');
+    } else {
+      console.log('Kolumna scheduled_date już istnieje w tabeli completed_workouts.');
+    }
     
   } catch (error) {
-    console.error('Wystąpił błąd:', error);
+    console.error('Błąd podczas wykonywania migracji:', error);
+    throw error;
+  } finally {
+    // Zamknij połączenie
+    await pool.end();
+    console.log('Połączenie z bazą danych zamknięte.');
   }
 }
 
-// Uruchom skrypt
-main();
+// Wywołaj funkcję główną
+main()
+  .then(() => console.log('Migracja zakończona.'))
+  .catch(err => {
+    console.error('Migracja nie powiodła się:', err);
+    process.exit(1);
+  });
