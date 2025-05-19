@@ -181,63 +181,68 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
         </div>
       ) : (
         <div className="space-y-4">
-          {workoutDetails.map((workout: any) => (
-            <div 
-              key={workout.scheduledWorkoutId} 
-              className={`border rounded-lg p-4 relative ${workout.isCompleted ? 'bg-green-50 border-green-200' : 'bg-white'}`}
-            >
-              <h4 className="font-medium text-lg mb-2">{workout.title}</h4>
-              
-              <div className="flex items-center space-x-2 mb-1">
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-1 text-gray-500" />
-                  <span className="text-gray-700">
-                    {workout.duration} minutes
-                  </span>
+          {workoutDetails.map((workout: any) => {
+            // Sprawdź stan ukończenia tego konkretnego treningu używając naszej niezależnej funkcji
+            const isCompleted = WorkoutCompletion.isCompleted(workout.scheduledWorkoutId) || workout.isCompleted;
+            
+            return (
+              <div 
+                key={workout.scheduledWorkoutId} 
+                className={`border rounded-lg p-4 relative ${isCompleted ? 'bg-green-50 border-green-200' : 'bg-white'}`}
+              >
+                <h4 className="font-medium text-lg mb-2">{workout.title}</h4>
+                
+                <div className="flex items-center space-x-2 mb-1">
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-1 text-gray-500" />
+                    <span className="text-gray-700">
+                      {workout.duration} minut
+                    </span>
+                  </div>
+                  
+                  <span className="text-gray-400">•</span>
+                  
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-1 text-gray-500" />
+                    <span className="text-gray-700">
+                      Dzień {Math.max(1, workout.programDay || 1)}
+                    </span>
+                  </div>
                 </div>
                 
-                <span className="text-gray-400">•</span>
+                {workout.description && (
+                  <p className="text-sm text-gray-600 mb-3">{workout.description}</p>
+                )}
                 
-                <div className="flex items-center">
-                  <Calendar className="h-4 w-4 mr-1 text-gray-500" />
-                  <span className="text-gray-700">
-                    Day {Math.max(1, workout.programDay || 1)}
-                  </span>
+                <div className="absolute top-4 right-4">
+                  <Button 
+                    variant={isCompleted ? "default" : "default"}
+                    size="sm"
+                    onClick={() => handleToggleComplete(workout.scheduledWorkoutId, isCompleted)}
+                    disabled={markCompletedMutation.isPending}
+                    className={isCompleted ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
+                  >
+                    {markCompletedMutation.isPending ? (
+                      <div className="flex items-center">
+                        <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-1"></div>
+                        <span>Aktualizacja...</span>
+                      </div>
+                    ) : isCompleted ? (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        <span>Wykonane</span>
+                      </>
+                    ) : (
+                      <>
+                        <Dumbbell className="h-4 w-4 mr-1" />
+                        <span>Oznacz jako wykonane</span>
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
-              
-              {workout.description && (
-                <p className="text-sm text-gray-600 mb-3">{workout.description}</p>
-              )}
-              
-              <div className="absolute top-4 right-4">
-                <Button 
-                  variant={workout.isCompleted ? "default" : "default"}
-                  size="sm"
-                  onClick={() => handleToggleComplete(workout.scheduledWorkoutId, workout.isCompleted)}
-                  disabled={markCompletedMutation.isPending}
-                  className={workout.isCompleted ? 'bg-green-600 hover:bg-green-700 text-white' : ''}
-                >
-                  {markCompletedMutation.isPending ? (
-                    <div className="flex items-center">
-                      <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-1"></div>
-                      <span>Updating...</span>
-                    </div>
-                  ) : workout.isCompleted ? (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      <span>Done</span>
-                    </>
-                  ) : (
-                    <>
-                      <Dumbbell className="h-4 w-4 mr-1" />
-                      <span>Mark as Done</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
