@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { startOfMonth, endOfMonth, format } from "date-fns";
+import { WorkoutCompletion } from "@/lib/workout-completion";
 
 interface CalendarGridProps {
   year: number;
@@ -62,22 +63,43 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate }: CalendarGridP
     },
   });
   
-  // Organize scheduled workouts by day
+  // Organize scheduled workouts by day - prevent infinite loop by using a more stable approach
+  // Using a ref to avoid infinite rendering cycles
   useEffect(() => {
+    // Skip the effect if no workouts
+    if (!monthWorkouts || monthWorkouts.length === 0) {
+      return;
+    }
+    
+    // Convert scheduled workouts into a lookup map by day
     const workoutsByDay: Record<number, ScheduledWorkout[]> = {};
     
-    monthWorkouts.forEach(workout => {
-      const workoutDate = new Date(workout.scheduledDate);
-      const day = workoutDate.getDate();
-      
-      if (!workoutsByDay[day]) {
-        workoutsByDay[day] = [];
+    // Process all workouts once
+    for (const workout of monthWorkouts) {
+      try {
+        const workoutDate = new Date(workout.scheduledDate);
+        const day = workoutDate.getDate();
+        
+        if (!workoutsByDay[day]) {
+          workoutsByDay[day] = [];
+        }
+        
+        // Only add if not already present (prevent duplicates)
+        const exists = workoutsByDay[day].some(w => w.id === workout.id);
+        if (!exists) {
+          workoutsByDay[day].push(workout);
+        }
+      } catch (error) {
+        console.error("Error processing workout date:", error);
       }
-      
-      workoutsByDay[day].push(workout);
-    });
+    }
     
-    setScheduledWorkoutsByDay(workoutsByDay);
+    // Update state only if there's an actual change
+    setScheduledWorkoutsByDay(prevState => {
+      // Deep comparison to prevent unnecessary updates
+      const isEqual = JSON.stringify(prevState) === JSON.stringify(workoutsByDay);
+      return isEqual ? prevState : workoutsByDay;
+    });
   }, [monthWorkouts]);
   
   // Check if a date has workouts scheduled
@@ -86,12 +108,26 @@ const CalendarGrid = ({ year, month, selectedDate, onSelectDate }: CalendarGridP
   };
   
   // Check if all workouts on a day are completed - only these days will be green
+  // We now check both server status and our client tracking for more reliable results
   const isCompleted = (day: number) => {
     if (!scheduledWorkoutsByDay[day] || scheduledWorkoutsByDay[day].length === 0) {
       return false;
     }
     
-    return scheduledWorkoutsByDay[day].every(workout => workout.isCompleted);
+    // Get the date string for this day
+    const dateString = format(new Date(year, month, day), 'yyyy-MM-dd');
+    
+    // Check if all workouts for this day are completed by combining server and client state
+    return scheduledWorkoutsByDay[day].every(workout => {
+      // Check server-side status
+      const serverCompleted = workout.isCompleted;
+      
+      // Check client-side status with our composite key tracking
+      const clientCompleted = WorkoutCompletion.isCompleted(workout.id, dateString);
+      
+      // A workout is completed if either the server or client says it's completed
+      return serverCompleted || clientCompleted;
+    });
   };
   
   // Check if a date is today
