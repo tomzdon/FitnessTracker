@@ -53,16 +53,16 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
     enabled: workouts.length > 0
   });
   
-  // Mark workout as completed mutation - całkowicie niezależna dla każdego treningu
+  // Mark workout as completed mutation - completely independent for each workout instance
   const markCompletedMutation = useMutation({
     mutationFn: async ({ id, isCompleted }: { id: number, isCompleted: boolean }) => {
-      // Aktualizujemy lokalny stan ukończenia treningu - dla natychmiastowego odzwierciedlenia w UI
+      // Update local workout completion state - for immediate UI feedback
       WorkoutCompletion.setCompleted(id, isCompleted);
       
-      // Wywołujemy API tylko dla jednego konkretnego treningu o podanym ID
+      // Call API only for this specific workout ID
       const res = await apiRequest("PUT", `/api/scheduled-workouts/${id}/complete`, { 
         isCompleted,
-        specificWorkoutId: id // Zapewnienie, że tylko ten konkretny trening zostanie zaktualizowany
+        specificWorkoutId: id // Ensure only this specific workout is updated
       });
       return await res.json();
     },
@@ -70,44 +70,44 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
       const updatedWorkout = data.updatedWorkout;
       
       if (updatedWorkout) {
-        console.log(`Aktualizacja treningu ID: ${updatedWorkout.id} do stanu isCompleted: ${updatedWorkout.isCompleted}`);
+        console.log(`Updating workout ID: ${updatedWorkout.id} to isCompleted state: ${updatedWorkout.isCompleted}`);
         
-        // TYLKO aktualizacja tego konkretnego treningu w widoku dnia
+        // ONLY update this specific workout in day view by exact ID
         const dateKey = selectedDate.toISOString().split('T')[0];
         const currentDayWorkouts = queryClient.getQueryData<any[]>(['/api/scheduled-workouts/date', dateKey]);
         
         if (currentDayWorkouts) {
           queryClient.setQueryData(['/api/scheduled-workouts/date', dateKey], 
             currentDayWorkouts.map(workout => {
-              // ŚCISŁE porównanie ID - tylko ten konkretny trening zostanie zaktualizowany
+              // STRICT ID comparison - only this specific workout will be updated
               if (workout.id === updatedWorkout.id) {
-                // Zwracamy zaktualizowany trening
+                // Return the updated workout
                 return updatedWorkout;
               }
-              // Wszystkie inne treningi pozostają bez zmian
+              // All other workouts remain unchanged
               return workout;
             })
           );
         }
         
-        // Aktualizacja szczegółów tylko dla tego konkretnego treningu
+        // Update details only for this specific workout instance
         const detailsKey = workouts.map(w => w.workoutId).join(',');
         const workoutDetails = queryClient.getQueryData<any[]>(['/api/workout-details', detailsKey]);
         
         if (workoutDetails) {
           queryClient.setQueryData(['/api/workout-details', detailsKey], 
             workoutDetails.map(workout => {
-              // Tylko ten konkretny trening o tym konkretnym ID zostanie zaktualizowany
+              // Only this specific workout with this exact ID will be updated
               if (workout.scheduledWorkoutId === updatedWorkout.id) {
                 return { ...workout, isCompleted: updatedWorkout.isCompleted };
               }
-              // Wszystkie inne treningi pozostają bez zmian
+              // All other workouts remain unchanged
               return workout;
             })
           );
         }
         
-        // Aktualizacja treningu w zakresie miesiąca, również tylko dla tego konkretnego ID
+        // Update this workout in the month range, also only for this specific ID
         const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
         const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
         
@@ -120,27 +120,27 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
         if (rangeWorkouts) {
           queryClient.setQueryData(monthKey, 
             rangeWorkouts.map(workout => {
-              // ŚCISŁE dopasowanie ID - tylko ten dokładny trening zostanie zaktualizowany
+              // STRICT ID matching - only this exact workout will be updated
               if (workout.id === updatedWorkout.id) {
                 return updatedWorkout;
               }
-              // Wszystkie inne treningi pozostają bez zmian
+              // All other workouts remain unchanged
               return workout;
             })
           );
         }
       }
       
-      // Informacja dla użytkownika
-      const status = updatedWorkout && updatedWorkout.isCompleted ? 'ukończony' : 'oznaczony jako nieukończony';
+      // User notification
+      const status = updatedWorkout && updatedWorkout.isCompleted ? 'completed' : 'marked as incomplete';
       toast({
-        title: `Trening ${status}`,
+        title: `Workout ${status}`,
         description: updatedWorkout && updatedWorkout.isCompleted 
-          ? "Świetna robota! Twój postęp został zaktualizowany." 
-          : "Trening został oznaczony jako nieukończony",
+          ? "Great job! Your progress has been updated." 
+          : "Workout has been marked as incomplete",
       });
       
-      // Aktualizacja statystyk i postępu programu, bez wpływu na stan innych treningów
+      // Update statistics and program progress without affecting other workouts
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
       queryClient.invalidateQueries({ queryKey: ['/api/active-program'] });
       queryClient.invalidateQueries({ queryKey: ['/api/completedWorkouts'] });
@@ -196,7 +196,7 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-1 text-gray-500" />
                     <span className="text-gray-700">
-                      {workout.duration} minut
+                      {workout.duration} minutes
                     </span>
                   </div>
                   
@@ -205,7 +205,7 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1 text-gray-500" />
                     <span className="text-gray-700">
-                      Dzień {Math.max(1, workout.programDay || 1)}
+                      Day {Math.max(1, workout.programDay || 1)}
                     </span>
                   </div>
                 </div>
@@ -225,17 +225,17 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
                     {markCompletedMutation.isPending ? (
                       <div className="flex items-center">
                         <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-1"></div>
-                        <span>Aktualizacja...</span>
+                        <span>Updating...</span>
                       </div>
                     ) : isCompleted ? (
                       <>
                         <CheckCircle className="h-4 w-4 mr-1" />
-                        <span>Wykonane</span>
+                        <span>Done</span>
                       </>
                     ) : (
                       <>
                         <Dumbbell className="h-4 w-4 mr-1" />
-                        <span>Oznacz jako wykonane</span>
+                        <span>Mark as Done</span>
                       </>
                     )}
                   </Button>
