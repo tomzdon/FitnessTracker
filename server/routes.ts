@@ -431,21 +431,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // We need to assign workouts for the whole program duration
       const totalWorkoutsNeeded = program.duration;
       
-      // Create a cycle of workouts that repeats if there are fewer workouts than days
-      for (let day = 1; day <= totalWorkoutsNeeded; day++) {
-        // Use modulo to cycle through available workouts if there are fewer workouts than program days
-        const workoutIndex = (day - 1) % workouts.length;
-        const workout = workouts[workoutIndex];
+      // Get the real workout days from the program
+      let workoutsByDay = [];
+      for (let i = 0; i < workouts.length; i++) {
+        // Ensure each workout has a proper day assignment
+        workoutsByDay.push({
+          workout: workouts[i],
+          programDay: i + 1  // Assign sequential program days (Day 1, Day 2, Day 3, etc.)
+        });
+      }
+      
+      // If we have more days than workouts, repeat the workout sequence
+      if (totalWorkoutsNeeded > workouts.length) {
+        let currentDay = workouts.length + 1;
+        while (currentDay <= totalWorkoutsNeeded) {
+          for (let i = 0; i < workouts.length && currentDay <= totalWorkoutsNeeded; i++) {
+            workoutsByDay.push({
+              workout: workouts[i],
+              programDay: currentDay  // Keep program days sequential even when repeating workouts
+            });
+            currentDay++;
+          }
+        }
+      }
+      
+      // Now schedule each workout with the correct sequential program day
+      for (let i = 0; i < totalWorkoutsNeeded; i++) {
+        const { workout, programDay } = workoutsByDay[i];
         
         // Calculate date: every 3 days from start date
         const scheduledDate = new Date(startDate);
-        scheduledDate.setDate(startDate.getDate() + ((day - 1) * 3)); // Every 3 days
+        scheduledDate.setDate(startDate.getDate() + (i * 3)); // Every 3 days
         
         const scheduledWorkout = await storage.addScheduledWorkout({
           userId,
           programId,
           workoutId: workout.id,
-          programDay: day, // The actual program day (1 to duration)
+          programDay: programDay, // Use the properly assigned sequential program day
           scheduledDate,
           isCompleted: false
         });
