@@ -81,8 +81,30 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
           }
         );
         
-        // Update the scheduled workouts for the current date
+        // Update ONLY the specific workout that was marked as completed/incomplete
         queryClient.setQueryData(['/api/scheduled-workouts/date', selectedDate.toISOString().split('T')[0]], 
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            
+            return oldData.map((sw: any) => {
+              if (sw.id === updatedWorkout.id) {
+                return updatedWorkout;
+              }
+              return sw;
+            });
+          }
+        );
+        
+        // Also update the workout data in the month range data
+        // This ensures the calendar grid correctly reflects only the specific workout being completed
+        const monthStart = new Date(selectedDate);
+        monthStart.setDate(1);
+        const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+        
+        const startDate = monthStart.toISOString().split('T')[0];
+        const endDate = monthEnd.toISOString().split('T')[0];
+        
+        queryClient.setQueryData(['/api/scheduled-workouts/range', startDate, endDate], 
           (oldData: any) => {
             if (!oldData) return oldData;
             
