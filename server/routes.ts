@@ -423,20 +423,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get program workouts
       const { workouts } = await storage.getProgramWithWorkouts(programId);
       
-      // Schedule workouts every 3 days starting from today
+      // Schedule workouts for the entire program duration, every 3 days
       const startDate = new Date();
       const scheduledWorkouts = [];
       
-      for (let i = 0; i < workouts.length; i++) {
-        const workout = workouts[i];
+      // Calculate how many workouts to schedule based on program duration
+      // We need to assign workouts for the whole program duration
+      const totalWorkoutsNeeded = program.duration;
+      
+      // Create a cycle of workouts that repeats if there are fewer workouts than days
+      for (let day = 1; day <= totalWorkoutsNeeded; day++) {
+        // Use modulo to cycle through available workouts if there are fewer workouts than program days
+        const workoutIndex = (day - 1) % workouts.length;
+        const workout = workouts[workoutIndex];
+        
+        // Calculate date: every 3 days from start date
         const scheduledDate = new Date(startDate);
-        scheduledDate.setDate(startDate.getDate() + (i * 3)); // Every 3 days
+        scheduledDate.setDate(startDate.getDate() + ((day - 1) * 3)); // Every 3 days
         
         const scheduledWorkout = await storage.addScheduledWorkout({
           userId,
           programId,
           workoutId: workout.id,
-          programDay: i + 1,
+          programDay: day, // The actual program day (1 to duration)
           scheduledDate,
           isCompleted: false
         });
