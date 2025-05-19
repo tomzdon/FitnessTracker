@@ -56,8 +56,12 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
   // Mark workout as completed mutation - completely independent for each workout instance
   const markCompletedMutation = useMutation({
     mutationFn: async ({ id, isCompleted }: { id: number, isCompleted: boolean }) => {
+      // Format date to use in composite key
+      const dateString = selectedDate.toISOString().split('T')[0];
+      
       // Update local workout completion state - for immediate UI feedback
-      WorkoutCompletion.setCompleted(id, isCompleted);
+      // Using composite key of workout ID + date to ensure each workout instance is independent
+      WorkoutCompletion.setCompleted(id, isCompleted, dateString);
       
       // Call API only for this specific workout ID
       const res = await apiRequest("PUT", `/api/scheduled-workouts/${id}/complete`, { 
@@ -155,11 +159,15 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
   });
   
   const handleToggleComplete = (id: number, currentStatus: boolean) => {
-    // Aktualizujemy stan lokalnie za pomocą WorkoutCompletion
-    const newStatus = !currentStatus;
-    WorkoutCompletion.setCompleted(id, newStatus);
+    // Format date to use in the composite key
+    const dateString = selectedDate.toISOString().split('T')[0];
     
-    // Następnie aktualizujemy stan na serwerze
+    // Update local state with composite key of ID + date
+    // This ensures each workout instance (same workout on different dates) is tracked independently
+    const newStatus = !currentStatus;
+    WorkoutCompletion.setCompleted(id, newStatus, dateString);
+    
+    // Then update server state for this specific workout instance only
     markCompletedMutation.mutate({ id, isCompleted: newStatus });
   };
 

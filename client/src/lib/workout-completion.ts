@@ -10,8 +10,9 @@
 const STORAGE_KEY = 'workout-completion-states';
 
 // Interfejs stanu ukończenia treningów
+// Używamy klucza złożonego z ID treningu i daty, aby każdy trening miał niezależny stan ukończenia
 interface CompletionState {
-  [workoutId: number]: boolean;
+  [compositeKey: string]: boolean;
 }
 
 /**
@@ -51,26 +52,36 @@ export class WorkoutCompletion {
   }
 
   /**
-   * Sprawdza, czy trening o podanym ID jest ukończony
+   * Tworzy unikalny klucz kompozytowy dla treningu na podstawie ID i opcjonalnej daty
    */
-  static isCompleted(workoutId: number): boolean {
-    WorkoutCompletion.init();
-    return !!WorkoutCompletion.states[workoutId];
+  private static createKey(workoutId: number, date?: string): string {
+    // Jeśli data jest podana, użyj jej, w przeciwnym razie użyj tylko ID
+    return date ? `${workoutId}_${date}` : `${workoutId}`;
   }
 
   /**
-   * Ustawia stan ukończenia dla treningu o podanym ID
+   * Sprawdza, czy konkretny trening o podanym ID i dacie jest ukończony
    */
-  static setCompleted(workoutId: number, isCompleted: boolean): void {
+  static isCompleted(workoutId: number, date?: string): boolean {
     WorkoutCompletion.init();
+    const key = this.createKey(workoutId, date);
+    return !!WorkoutCompletion.states[key];
+  }
+
+  /**
+   * Ustawia stan ukończenia dla treningu o podanym ID i dacie
+   */
+  static setCompleted(workoutId: number, isCompleted: boolean, date?: string): void {
+    WorkoutCompletion.init();
+    const key = this.createKey(workoutId, date);
     
     // Jeśli trening ma być oznaczony jako ukończony
     if (isCompleted) {
-      WorkoutCompletion.states[workoutId] = true;
+      WorkoutCompletion.states[key] = true;
     } 
     // Jeśli trening ma być oznaczony jako nieukończony
     else {
-      delete WorkoutCompletion.states[workoutId];
+      delete WorkoutCompletion.states[key];
     }
     
     // Zapisujemy zmieniony stan
@@ -78,22 +89,31 @@ export class WorkoutCompletion {
   }
 
   /**
-   * Przełącza stan ukończenia treningu o podanym ID
+   * Przełącza stan ukończenia treningu o podanym ID i dacie
    */
-  static toggleCompleted(workoutId: number): boolean {
-    const currentState = WorkoutCompletion.isCompleted(workoutId);
-    WorkoutCompletion.setCompleted(workoutId, !currentState);
+  static toggleCompleted(workoutId: number, date?: string): boolean {
+    const currentState = WorkoutCompletion.isCompleted(workoutId, date);
+    WorkoutCompletion.setCompleted(workoutId, !currentState, date);
     return !currentState;
   }
 
   /**
-   * Zwraca listę ID ukończonych treningów
+   * Zwraca listę kluczy ukończonych treningów
    */
-  static getCompletedWorkouts(): number[] {
+  static getCompletedWorkouts(): string[] {
     WorkoutCompletion.init();
     return Object.entries(WorkoutCompletion.states)
       .filter(([_, isCompleted]) => isCompleted)
-      .map(([id, _]) => parseInt(id));
+      .map(([key, _]) => key);
+  }
+  
+  /**
+   * Sprawdza, czy konkretna instancja treningu jest ukończona
+   * używając ID zaplanowanego treningu
+   */
+  static isScheduledWorkoutCompleted(scheduledWorkoutId: number): boolean {
+    // Dla kompatybilności ze starym podejściem, używamy również ID jako bezpośredniego klucza
+    return WorkoutCompletion.isCompleted(scheduledWorkoutId);
   }
 
   /**
