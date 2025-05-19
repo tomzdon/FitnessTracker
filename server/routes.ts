@@ -156,28 +156,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Removing favorite for user:${userId}, workout:${workoutId}`);
       
-      // Użyjmy Drizzle ORM zamiast bezpośredniego SQL
-      // Znajdź wpis favorite
-      const [favorite] = await db
-        .select()
-        .from(favorites)
-        .where(
-          and(
-            eq(favorites.userId, userId),
-            eq(favorites.workoutId, workoutId)
-          )
-        );
+      // Najpierw wyszukaj ulubione korzystając ze storage api
+      const allFavorites = await storage.getFavorites(userId);
+      console.log('All favorites:', allFavorites);
       
-      if (!favorite) {
+      // Znajdź ID ulubionego na podstawie ID treningu
+      // Używamy prostszej metody - bezpośredniego zapytania SQL
+      const { pool } = require('./db');
+      const findFavoriteQuery = `
+        SELECT id FROM favorites 
+        WHERE user_id = $1 AND workout_id = $2 
+        LIMIT 1
+      `;
+      
+      const findResult = await pool.query(findFavoriteQuery, [userId, workoutId]);
+      
+      if (findResult.rows.length === 0) {
         return res.status(404).json({ message: 'Favorite not found' });
       }
       
-      console.log(`Found favorite ID: ${favorite.id}`);
+      const favoriteId = findResult.rows[0].id;
+      console.log(`Found favorite ID: ${favoriteId}`);
       
-      // Usuń ulubiony
-      await db
-        .delete(favorites)
-        .where(eq(favorites.id, favorite.id));
+      // Usuń ulubiony używając storage API
+      await storage.removeFavorite(favoriteId);
       
       res.status(200).json({ success: true, message: 'Favorite removed successfully' });
     } catch (error) {
@@ -624,11 +626,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Scheduled workout not found or not owned by user' });
       }
       
-      // Aktualizuj trening za pomocą storage
-      const updatedWorkout = await storage.updateScheduledWorkoutDate(
-        id, 
-        req.body.scheduledDate ? new Date(req.body.scheduledDate) : new Date('2025-05-22T12:00:00.000Z')
+      // Aktualizuj trening bezpośrednio w bazie danych
+      // Ponieważ nie ma metody updateScheduledWorkoutDate w storage, użyjemy bezpośrednio bazy danych
+      const { pool } = require('./db');
+      const updateQuery = `
+        UPDATE scheduled_workouts 
+        SET scheduled_date = $1
+        WHERE id = $2 AND user_id = $3
+        RETURNING *
+      `;
+      
+      const updateResult = await pool.query(
+        updateQuery, 
+        [
+          req.body.scheduledDate ? new Date(req.body.scheduledDate) : new Date('2025-05-22T12:00:00.000Z'), 
+          id, 
+          userId
+        ]
       );
+      
+      if (updateResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Failed to update workout date' });
+      }
+      
+      // Konwertujemy dane z bazy na obiekt ScheduledWorkout
+      const updatedWorkout = updateResult.rows[0];
       
       res.status(200).json({ message: 'Workout fixed successfully', workout: updatedWorkout });
     } catch (error) {
