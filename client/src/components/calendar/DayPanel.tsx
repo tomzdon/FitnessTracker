@@ -86,7 +86,8 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
           })
         );
         
-        // Update the month range data specifically for this workout only
+        // Update ONLY this specific workout instance in the month range data
+        // This ensures we only mark THIS specific workout on THIS specific day as completed
         const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
         const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
         
@@ -96,10 +97,17 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
         const monthKey = ['/api/scheduled-workouts/range', startDate, endDate];
         const rangeWorkouts = queryClient.getQueryData<any[]>(monthKey) || [];
         
+        // Only update the specific workout with the exact ID
+        // Other workouts of the same type but on different days remain unchanged
         queryClient.setQueryData(monthKey, 
-          rangeWorkouts.map(workout => 
-            workout.id === updatedWorkout.id ? updatedWorkout : workout
-          )
+          rangeWorkouts.map(workout => {
+            // Only update the exact workout instance with this specific ID
+            // This ensures we only mark this specific occurrence as completed
+            if (workout.id === updatedWorkout.id) {
+              return updatedWorkout;
+            }
+            return workout;
+          })
         );
       }
       
@@ -112,6 +120,8 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
       });
       
       // Update statistics and program progress without refetching calendar data
+      // This ensures other parts of the app are updated about the workout completion
+      // BUT it doesn't affect the calendar display of other workouts
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
       queryClient.invalidateQueries({ queryKey: ['/api/active-program'] });
       queryClient.invalidateQueries({ queryKey: ['/api/completedWorkouts'] });
