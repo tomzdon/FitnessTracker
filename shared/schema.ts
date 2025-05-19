@@ -105,6 +105,8 @@ export const completedWorkouts = pgTable("completed_workouts", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   workoutId: integer("workout_id").notNull().references(() => workouts.id),
+  // We'll track completion by the scheduled date for each workout rather than by ID reference
+  scheduledDate: timestamp("scheduled_date"),
   completedAt: timestamp("completed_at").defaultNow().notNull(),
 });
 
