@@ -156,35 +156,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Removing favorite for user:${userId}, workout:${workoutId}`);
       
-      // Najpierw wyszukaj ulubione korzystając ze storage api
-      const allFavorites = await storage.getFavorites(userId);
-      console.log('All favorites:', allFavorites);
-      
-      // Znajdź ID ulubionego na podstawie ID treningu
-      // Używamy prostszej metody - bezpośredniego zapytania SQL
-      const { pool } = require('./db');
-      const findFavoriteQuery = `
-        SELECT id FROM favorites 
-        WHERE user_id = $1 AND workout_id = $2 
-        LIMIT 1
-      `;
-      
-      const findResult = await pool.query(findFavoriteQuery, [userId, workoutId]);
-      
-      if (findResult.rows.length === 0) {
-        return res.status(404).json({ message: 'Favorite not found' });
+      try {
+        // Najpierw wyszukaj ulubione korzystając ze storage api
+        const allFavorites = await storage.getFavorites(userId);
+        console.log('All favorites:', allFavorites.map(f => ({ id: f.id, title: f.title })));
+        
+        // Użyjmy Drizzle ORM zamiast bezpośredniego SQL
+        console.log('Sprawdzam dokładnie tabele favorites...');
+        
+        // Znajdź ulubiony dla tego użytkownika i tego treningu
+        const favoritesList = await db
+          .select()
+          .from(favorites)
+          .where(
+            and(
+              eq(favorites.userId, userId),
+              eq(favorites.workoutId, workoutId)
+            )
+          );
+        
+        console.log('Find result for specific workout:', favoritesList);
+        
+        if (favoritesList.length === 0) {
+          console.log(`Nie znaleziono ulubionego dla user_id=${userId}, workout_id=${workoutId}`);
+          return res.status(404).json({ message: 'Favorite not found' });
+        }
+        
+        const favoriteId = favoritesList[0].id;
+        console.log(`Found favorite ID: ${favoriteId}, now removing...`);
+        
+        // Usuń ulubiony używając Drizzle ORM
+        const deleteResult = await db
+          .delete(favorites)
+          .where(eq(favorites.id, favoriteId))
+          .returning();
+        
+        console.log('Delete result:', deleteResult);
+        
+        if (deleteResult.length === 0) {
+          console.log('Usunięcie nie zwróciło żadnych wierszy - to dziwne');
+          return res.status(500).json({ message: 'Failed to delete favorite' });
+        }
+        
+        console.log(`Pomyślnie usunięto ulubiony o ID: ${favoriteId}`);
+      } catch (error: any) {
+        console.error('Dokładny błąd przy usuwaniu:', error);
+        const errorMessage = error.message || 'Nieznany błąd podczas usuwania';
+        return res.status(500).json({ message: `Error details: ${errorMessage}` });
       }
       
-      const favoriteId = findResult.rows[0].id;
-      console.log(`Found favorite ID: ${favoriteId}`);
-      
-      // Usuń ulubiony używając storage API
-      await storage.removeFavorite(favoriteId);
-      
       res.status(200).json({ success: true, message: 'Favorite removed successfully' });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error removing favorite by workout ID:', error);
-      res.status(500).json({ message: 'Failed to remove favorite by workout ID' });
+      const errorMessage = error.message || 'Failed to remove favorite by workout ID';
+      res.status(500).json({ message: errorMessage });
     }
   });
   

@@ -54,11 +54,31 @@ export function FavoriteButton({
   // Remove from favorites mutation
   const removeFavoriteMutation = useMutation({
     mutationFn: async () => {
-      // Remove directly by workoutId
-      const res = await apiRequest('DELETE', `/api/favourites/by-workout/${workoutId}`);
-      return { workoutId };
+      console.log(`Usuwanie ulubionego treningu, ID: ${workoutId}`);
+      
+      try {
+        // Najpierw sprawdźmy, co zwraca endpoint /api/favourites/details
+        const detailsRes = await fetch('/api/favourites/details');
+        const favoritesDetails = await detailsRes.json();
+        console.log('Szczegóły ulubionych:', favoritesDetails);
+        
+        // Remove directly by workoutId
+        const res = await apiRequest('DELETE', `/api/favourites/by-workout/${workoutId}`);
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          console.error('Błąd podczas usuwania ulubionego:', errorData);
+          throw new Error(errorData.message || 'Nie udało się usunąć ulubionego treningu');
+        }
+        
+        return { workoutId };
+      } catch (error) {
+        console.error('Wystąpił błąd:', error);
+        throw error;
+      }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Pomyślnie usunięto ulubiony trening:', data);
       setIsFavorite(false);
       toast({
         title: 'Removed from favorites',
@@ -68,6 +88,7 @@ export function FavoriteButton({
       queryClient.invalidateQueries({ queryKey: ['/api/favourites'] });
     },
     onError: (error: Error) => {
+      console.error('Błąd usuwania ulubionego:', error);
       toast({
         title: 'Failed to remove from favorites',
         description: error.message,
