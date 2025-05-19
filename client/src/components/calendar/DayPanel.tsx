@@ -52,42 +52,55 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
     enabled: workouts.length > 0
   });
   
-  // Mark workout as completed mutation
+  // Mark workout as completed mutation - completely isolated for each unique workout instance
   const markCompletedMutation = useMutation({
     mutationFn: async ({ id, isCompleted }: { id: number, isCompleted: boolean }) => {
-      const res = await apiRequest("PUT", `/api/scheduled-workouts/${id}/complete`, { isCompleted });
+      // Use the specific ID to mark just this one workout as completed
+      const res = await apiRequest("PUT", `/api/scheduled-workouts/${id}/complete`, { 
+        isCompleted,
+        specificWorkoutId: id // Make sure only this exact workout instance is affected
+      });
       return await res.json();
     },
     onSuccess: (data) => {
       const updatedWorkout = data.updatedWorkout;
       
       if (updatedWorkout) {
-        // Update only the specific workout on the current day view
-        // This will update the color and status of just this workout card
+        console.log(`Updating workout ID: ${updatedWorkout.id} to isCompleted: ${updatedWorkout.isCompleted}`);
+        
+        // ONLY update this specific workout in current day view by exact ID
         const dateKey = selectedDate.toISOString().split('T')[0];
-        const currentDayWorkouts = queryClient.getQueryData<any[]>(['/api/scheduled-workouts/date', dateKey]) || [];
+        const currentDayWorkouts = queryClient.getQueryData<any[]>(['/api/scheduled-workouts/date', dateKey]);
         
-        queryClient.setQueryData(['/api/scheduled-workouts/date', dateKey], 
-          currentDayWorkouts.map(workout => 
-            workout.id === updatedWorkout.id ? updatedWorkout : workout
-          )
-        );
+        if (currentDayWorkouts) {
+          queryClient.setQueryData(['/api/scheduled-workouts/date', dateKey], 
+            currentDayWorkouts.map(workout => {
+              // STRICT EQUALITY check by ID to ensure only this specific workout is updated
+              if (workout.id === updatedWorkout.id) {
+                return updatedWorkout;
+              }
+              return workout;
+            })
+          );
+        }
         
-        // Update the workout details for this specific workout
+        // Update the workout details for this specific workout instance only
         const detailsKey = workouts.map(w => w.workoutId).join(',');
-        const workoutDetails = queryClient.getQueryData<any[]>(['/api/workout-details', detailsKey]) || [];
+        const workoutDetails = queryClient.getQueryData<any[]>(['/api/workout-details', detailsKey]);
         
-        queryClient.setQueryData(['/api/workout-details', detailsKey], 
-          workoutDetails.map(workout => {
-            if (workout.scheduledWorkoutId === updatedWorkout.id) {
-              return { ...workout, isCompleted: updatedWorkout.isCompleted };
-            }
-            return workout;
-          })
-        );
+        if (workoutDetails) {
+          queryClient.setQueryData(['/api/workout-details', detailsKey], 
+            workoutDetails.map(workout => {
+              // Only update this exact workout instance by scheduledWorkoutId
+              if (workout.scheduledWorkoutId === updatedWorkout.id) {
+                return { ...workout, isCompleted: updatedWorkout.isCompleted };
+              }
+              return workout;
+            })
+          );
+        }
         
-        // Update ONLY this specific workout instance in the month range data
-        // This ensures we only mark THIS specific workout on THIS specific day as completed
+        // Update this specific workout instance in the month range by exact ID
         const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
         const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
         
@@ -95,20 +108,19 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
         const endDate = monthEnd.toISOString().split('T')[0];
         
         const monthKey = ['/api/scheduled-workouts/range', startDate, endDate];
-        const rangeWorkouts = queryClient.getQueryData<any[]>(monthKey) || [];
+        const rangeWorkouts = queryClient.getQueryData<any[]>(monthKey);
         
-        // Only update the specific workout with the exact ID
-        // Other workouts of the same type but on different days remain unchanged
-        queryClient.setQueryData(monthKey, 
-          rangeWorkouts.map(workout => {
-            // Only update the exact workout instance with this specific ID
-            // This ensures we only mark this specific occurrence as completed
-            if (workout.id === updatedWorkout.id) {
-              return updatedWorkout;
-            }
-            return workout;
-          })
-        );
+        if (rangeWorkouts) {
+          queryClient.setQueryData(monthKey, 
+            rangeWorkouts.map(workout => {
+              // STRICT ID MATCH for the specific workout instance
+              if (workout.id === updatedWorkout.id) {
+                return updatedWorkout;
+              }
+              return workout;
+            })
+          );
+        }
       }
       
       const status = updatedWorkout && updatedWorkout.isCompleted ? 'completed' : 'marked as incomplete';
@@ -119,9 +131,7 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
           : "Workout has been marked as incomplete",
       });
       
-      // Update statistics and program progress without refetching calendar data
-      // This ensures other parts of the app are updated about the workout completion
-      // BUT it doesn't affect the calendar display of other workouts
+      // Update statistics and program progress while keeping workouts independent
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
       queryClient.invalidateQueries({ queryKey: ['/api/active-program'] });
       queryClient.invalidateQueries({ queryKey: ['/api/completedWorkouts'] });
