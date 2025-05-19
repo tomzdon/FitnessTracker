@@ -193,11 +193,11 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
       ) : (
         <div className="space-y-4">
           {workoutDetails.map((workout: any) => {
-            // Use our new unique ID system to check completion status
+            // Używamy daty do stworzenia unikalnego identyfikatora treningu
             const dateString = selectedDate.toISOString().split('T')[0];
-            // Check both the server-reported status and our local tracking
+            // Sprawdzamy status ukończenia treningu - używamy naszego nowego hooka
             const isCompleted = workout.isCompleted || 
-              WorkoutCompletion.isCompleted(workout.scheduledWorkoutId, dateString);
+              isWorkoutCompleted(workout.scheduledWorkoutId, dateString);
             
             return (
               <div 

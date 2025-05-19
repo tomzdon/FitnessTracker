@@ -18,6 +18,7 @@ import MobileNavigation from "@/components/layout/MobileNavigation";
 import { BackToTop } from "@/components/ui/back-to-top";
 import { ProtectedRoute } from "./lib/protected-route";
 import { AuthProvider } from "@/hooks/use-auth";
+import { WorkoutCompletionProvider } from "@/contexts/WorkoutCompletionContext";
 
 function AppRoutes() {
   return (
