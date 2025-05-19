@@ -688,7 +688,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Zwróć zaktualizowany trening wraz z informacjami o ukończonym treningu
+      // Return the updated workout with completed workout info
       res.json({
         updatedWorkout,
         completedWorkout
