@@ -1,8 +1,10 @@
 import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertFavoriteSchema, insertWorkoutSchema, insertProgramSchema, insertProgramWorkoutSchema, insertUserProgramSchema } from "@shared/schema";
+import { insertFavoriteSchema, insertWorkoutSchema, insertProgramSchema, insertProgramWorkoutSchema, insertUserProgramSchema, favorites } from "@shared/schema";
 import { setupAuth } from "./auth";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 // Middleware to check if user is authenticated
 function isAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -148,24 +150,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user!.id;
       const workoutId = parseInt(req.params.workoutId);
       
+      if (isNaN(workoutId)) {
+        return res.status(400).json({ message: 'Invalid workout ID' });
+      }
+      
       console.log(`Removing favorite for user:${userId}, workout:${workoutId}`);
       
-      // Find the favorite with the matching workout ID for this user
-      const { pool } = require('./db');
-      const result = await pool.query('SELECT * FROM favorites WHERE user_id = $1 AND workout_id = $2', [userId, workoutId]);
+      // Użyjmy Drizzle ORM zamiast bezpośredniego SQL
+      // Znajdź wpis favorite
+      const [favorite] = await db
+        .select()
+        .from(favorites)
+        .where(
+          and(
+            eq(favorites.userId, userId),
+            eq(favorites.workoutId, workoutId)
+          )
+        );
       
-      console.log('Query result:', result.rows);
-      
-      if (result.rows.length === 0) {
+      if (!favorite) {
         return res.status(404).json({ message: 'Favorite not found' });
       }
       
-      const favoriteId = result.rows[0].id;
-      console.log(`Found favorite ID: ${favoriteId}`);
+      console.log(`Found favorite ID: ${favorite.id}`);
       
-      // Remove the favorite directly with SQL for maximum reliability
-      const deleteResult = await pool.query('DELETE FROM favorites WHERE id = $1 RETURNING *', [favoriteId]);
-      console.log('Delete result:', deleteResult.rows);
+      // Usuń ulubiony
+      await db
+        .delete(favorites)
+        .where(eq(favorites.id, favorite.id));
       
       res.status(200).json({ success: true, message: 'Favorite removed successfully' });
     } catch (error) {
