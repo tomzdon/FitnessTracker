@@ -59,62 +59,47 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
       return await res.json();
     },
     onSuccess: (data) => {
-      // Immediate update of the local state to reflect the change without waiting for a refetch
-      // This will cause the UI to update instantly
       const updatedWorkout = data.updatedWorkout;
       
       if (updatedWorkout) {
-        // Immediately update the cache for this specific scheduled workout
-        queryClient.setQueryData(['/api/workout-details', workouts.map(w => w.workoutId).join(',')], 
-          (oldData: any) => {
-            if (!oldData) return oldData;
-            
-            return oldData.map((workout: any) => {
-              if (workout.scheduledWorkoutId === updatedWorkout.id) {
-                return {
-                  ...workout,
-                  isCompleted: updatedWorkout.isCompleted
-                };
-              }
-              return workout;
-            });
-          }
+        // Update only the specific workout on the current day view
+        // This will update the color and status of just this workout card
+        const dateKey = selectedDate.toISOString().split('T')[0];
+        const currentDayWorkouts = queryClient.getQueryData<any[]>(['/api/scheduled-workouts/date', dateKey]) || [];
+        
+        queryClient.setQueryData(['/api/scheduled-workouts/date', dateKey], 
+          currentDayWorkouts.map(workout => 
+            workout.id === updatedWorkout.id ? updatedWorkout : workout
+          )
         );
         
-        // Update ONLY the specific workout that was marked as completed/incomplete
-        queryClient.setQueryData(['/api/scheduled-workouts/date', selectedDate.toISOString().split('T')[0]], 
-          (oldData: any) => {
-            if (!oldData) return oldData;
-            
-            return oldData.map((sw: any) => {
-              if (sw.id === updatedWorkout.id) {
-                return updatedWorkout;
-              }
-              return sw;
-            });
-          }
+        // Update the workout details for this specific workout
+        const detailsKey = workouts.map(w => w.workoutId).join(',');
+        const workoutDetails = queryClient.getQueryData<any[]>(['/api/workout-details', detailsKey]) || [];
+        
+        queryClient.setQueryData(['/api/workout-details', detailsKey], 
+          workoutDetails.map(workout => {
+            if (workout.scheduledWorkoutId === updatedWorkout.id) {
+              return { ...workout, isCompleted: updatedWorkout.isCompleted };
+            }
+            return workout;
+          })
         );
         
-        // Also update the workout data in the month range data
-        // This ensures the calendar grid correctly reflects only the specific workout being completed
-        const monthStart = new Date(selectedDate);
-        monthStart.setDate(1);
+        // Update the month range data specifically for this workout only
+        const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
         const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
         
         const startDate = monthStart.toISOString().split('T')[0];
         const endDate = monthEnd.toISOString().split('T')[0];
         
-        queryClient.setQueryData(['/api/scheduled-workouts/range', startDate, endDate], 
-          (oldData: any) => {
-            if (!oldData) return oldData;
-            
-            return oldData.map((sw: any) => {
-              if (sw.id === updatedWorkout.id) {
-                return updatedWorkout;
-              }
-              return sw;
-            });
-          }
+        const monthKey = ['/api/scheduled-workouts/range', startDate, endDate];
+        const rangeWorkouts = queryClient.getQueryData<any[]>(monthKey) || [];
+        
+        queryClient.setQueryData(monthKey, 
+          rangeWorkouts.map(workout => 
+            workout.id === updatedWorkout.id ? updatedWorkout : workout
+          )
         );
       }
       
@@ -126,9 +111,7 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
           : "Workout has been marked as incomplete",
       });
       
-      // Also invalidate queries to ensure all data stays in sync
-      queryClient.invalidateQueries({ queryKey: ['/api/scheduled-workouts/date'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/scheduled-workouts/range'] });
+      // Update statistics and program progress without refetching calendar data
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
       queryClient.invalidateQueries({ queryKey: ['/api/active-program'] });
       queryClient.invalidateQueries({ queryKey: ['/api/completedWorkouts'] });
