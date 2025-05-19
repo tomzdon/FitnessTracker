@@ -53,13 +53,16 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
     enabled: workouts.length > 0
   });
   
-  // Mark workout as completed mutation - completely isolated for each unique workout instance
+  // Mark workout as completed mutation - całkowicie niezależna dla każdego treningu
   const markCompletedMutation = useMutation({
     mutationFn: async ({ id, isCompleted }: { id: number, isCompleted: boolean }) => {
-      // Use the specific ID to mark just this one workout as completed
+      // Aktualizujemy lokalny stan ukończenia treningu - dla natychmiastowego odzwierciedlenia w UI
+      WorkoutCompletion.setCompleted(id, isCompleted);
+      
+      // Wywołujemy API tylko dla jednego konkretnego treningu o podanym ID
       const res = await apiRequest("PUT", `/api/scheduled-workouts/${id}/complete`, { 
         isCompleted,
-        specificWorkoutId: id // Make sure only this exact workout instance is affected
+        specificWorkoutId: id // Zapewnienie, że tylko ten konkretny trening zostanie zaktualizowany
       });
       return await res.json();
     },
@@ -67,41 +70,44 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
       const updatedWorkout = data.updatedWorkout;
       
       if (updatedWorkout) {
-        console.log(`Updating workout ID: ${updatedWorkout.id} to isCompleted: ${updatedWorkout.isCompleted}`);
+        console.log(`Aktualizacja treningu ID: ${updatedWorkout.id} do stanu isCompleted: ${updatedWorkout.isCompleted}`);
         
-        // ONLY update this specific workout in current day view by exact ID
+        // TYLKO aktualizacja tego konkretnego treningu w widoku dnia
         const dateKey = selectedDate.toISOString().split('T')[0];
         const currentDayWorkouts = queryClient.getQueryData<any[]>(['/api/scheduled-workouts/date', dateKey]);
         
         if (currentDayWorkouts) {
           queryClient.setQueryData(['/api/scheduled-workouts/date', dateKey], 
             currentDayWorkouts.map(workout => {
-              // STRICT EQUALITY check by ID to ensure only this specific workout is updated
+              // ŚCISŁE porównanie ID - tylko ten konkretny trening zostanie zaktualizowany
               if (workout.id === updatedWorkout.id) {
+                // Zwracamy zaktualizowany trening
                 return updatedWorkout;
               }
+              // Wszystkie inne treningi pozostają bez zmian
               return workout;
             })
           );
         }
         
-        // Update the workout details for this specific workout instance only
+        // Aktualizacja szczegółów tylko dla tego konkretnego treningu
         const detailsKey = workouts.map(w => w.workoutId).join(',');
         const workoutDetails = queryClient.getQueryData<any[]>(['/api/workout-details', detailsKey]);
         
         if (workoutDetails) {
           queryClient.setQueryData(['/api/workout-details', detailsKey], 
             workoutDetails.map(workout => {
-              // Only update this exact workout instance by scheduledWorkoutId
+              // Tylko ten konkretny trening o tym konkretnym ID zostanie zaktualizowany
               if (workout.scheduledWorkoutId === updatedWorkout.id) {
                 return { ...workout, isCompleted: updatedWorkout.isCompleted };
               }
+              // Wszystkie inne treningi pozostają bez zmian
               return workout;
             })
           );
         }
         
-        // Update this specific workout instance in the month range by exact ID
+        // Aktualizacja treningu w zakresie miesiąca, również tylko dla tego konkretnego ID
         const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
         const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
         
@@ -114,25 +120,27 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
         if (rangeWorkouts) {
           queryClient.setQueryData(monthKey, 
             rangeWorkouts.map(workout => {
-              // STRICT ID MATCH for the specific workout instance
+              // ŚCISŁE dopasowanie ID - tylko ten dokładny trening zostanie zaktualizowany
               if (workout.id === updatedWorkout.id) {
                 return updatedWorkout;
               }
+              // Wszystkie inne treningi pozostają bez zmian
               return workout;
             })
           );
         }
       }
       
-      const status = updatedWorkout && updatedWorkout.isCompleted ? 'completed' : 'marked as incomplete';
+      // Informacja dla użytkownika
+      const status = updatedWorkout && updatedWorkout.isCompleted ? 'ukończony' : 'oznaczony jako nieukończony';
       toast({
-        title: `Workout ${status}`,
+        title: `Trening ${status}`,
         description: updatedWorkout && updatedWorkout.isCompleted 
-          ? "Great job! Your progress has been updated." 
-          : "Workout has been marked as incomplete",
+          ? "Świetna robota! Twój postęp został zaktualizowany." 
+          : "Trening został oznaczony jako nieukończony",
       });
       
-      // Update statistics and program progress while keeping workouts independent
+      // Aktualizacja statystyk i postępu programu, bez wpływu na stan innych treningów
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
       queryClient.invalidateQueries({ queryKey: ['/api/active-program'] });
       queryClient.invalidateQueries({ queryKey: ['/api/completedWorkouts'] });
@@ -147,7 +155,12 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
   });
   
   const handleToggleComplete = (id: number, currentStatus: boolean) => {
-    markCompletedMutation.mutate({ id, isCompleted: !currentStatus });
+    // Aktualizujemy stan lokalnie za pomocą WorkoutCompletion
+    const newStatus = !currentStatus;
+    WorkoutCompletion.setCompleted(id, newStatus);
+    
+    // Następnie aktualizujemy stan na serwerze
+    markCompletedMutation.mutate({ id, isCompleted: newStatus });
   };
 
   return (
