@@ -167,7 +167,7 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
                 <div className="flex items-center">
                   <Calendar className="h-4 w-4 mr-1 text-gray-500" />
                   <span className="text-gray-700">
-                    Day {workout.programDay || 1}
+                    Day {Math.max(1, workout.programDay || 1)}
                   </span>
                 </div>
               </div>
