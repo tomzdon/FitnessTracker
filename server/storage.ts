@@ -1015,6 +1015,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addCompletedWorkout(insertCompletedWorkout: InsertCompletedWorkout): Promise<CompletedWorkout> {
+    // We'll only use the existing columns in the database (userId, workoutId, completedAt)
+    // The scheduledDate is now handled on the client side with our composite key approach
     const [completedWorkout] = await db
       .insert(completedWorkouts)
       .values({
