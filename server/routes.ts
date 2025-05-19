@@ -658,10 +658,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // STEP 2: Add to completed workouts history
       // Dodajemy scheduledDate do ukończonego treningu dla niezależnego śledzenia
+      // Konwertujemy datę do prawidłowego formatu
+      const scheduledDate = updatedWorkout.scheduledDate ? new Date(updatedWorkout.scheduledDate) : new Date();
+      
       const completedWorkout = await storage.addCompletedWorkout({
         userId,
         workoutId: updatedWorkout.workoutId,
-        scheduledDate: updatedWorkout.scheduledDate
+        scheduledDate: scheduledDate
       });
       
       // STEP 3: If this is part of a program, update program progress

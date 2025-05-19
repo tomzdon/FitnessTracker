@@ -1028,17 +1028,39 @@ export class DatabaseStorage implements IStorage {
   }
 
   async addCompletedWorkout(insertCompletedWorkout: InsertCompletedWorkout): Promise<CompletedWorkout> {
-    // Używamy nowej kolumny scheduled_date dla niezależnego śledzenia ukończonych treningów
-    const [completedWorkout] = await db
-      .insert(completedWorkouts)
-      .values({
-        userId: insertCompletedWorkout.userId,
-        workoutId: insertCompletedWorkout.workoutId,
-        scheduledDate: insertCompletedWorkout.scheduledDate || new Date(), // Używamy scheduledDate lub bieżącej daty
-        completedAt: new Date()
-      })
-      .returning();
-    return completedWorkout;
+    try {
+      // Zawsze używamy prawidłowej daty (obiekt Date lub null) - nigdy undefined
+      let validScheduledDate = null;
+      
+      if (insertCompletedWorkout.scheduledDate) {
+        // Jeśli to string, konwertujemy na obiekt Date
+        if (typeof insertCompletedWorkout.scheduledDate === 'string') {
+          validScheduledDate = new Date(insertCompletedWorkout.scheduledDate);
+        } else {
+          validScheduledDate = insertCompletedWorkout.scheduledDate;
+        }
+        
+        // Sprawdź, czy data jest prawidłowa
+        if (isNaN(validScheduledDate.getTime())) {
+          validScheduledDate = new Date(); // Użyj aktualnej daty, jeśli nieprawidłowa
+        }
+      }
+      
+      const [completedWorkout] = await db
+        .insert(completedWorkouts)
+        .values({
+          userId: insertCompletedWorkout.userId,
+          workoutId: insertCompletedWorkout.workoutId,
+          scheduledDate: validScheduledDate,
+          completedAt: new Date()
+        })
+        .returning();
+      
+      return completedWorkout;
+    } catch (error) {
+      console.error('Błąd podczas dodawania ukończonego treningu:', error);
+      throw error;
+    }
   }
 
   // Progress Test methods
