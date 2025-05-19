@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { WorkoutsStore } from "@/lib/workouts-store";
+import { WorkoutCompletion } from "@/lib/workout-completion";
 
 interface DayPanelProps {
   selectedDate: Date;

@@ -510,6 +510,10 @@ export class MemStorage implements IStorage {
       .filter(sw => sw.userId === userId);
   }
   
+  async getScheduledWorkoutById(id: number): Promise<ScheduledWorkout | undefined> {
+    return this.scheduledWorkouts.get(id);
+  }
+  
   async getScheduledWorkoutsByDate(userId: number, date: Date): Promise<ScheduledWorkout[]> {
     const scheduledDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     
