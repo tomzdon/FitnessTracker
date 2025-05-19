@@ -608,23 +608,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Missing isCompleted field' });
       }
       
-      // Step 1: Mark the scheduled workout as completed
-      const updatedWorkout = await storage.markScheduledWorkoutCompleted(id, Boolean(isCompleted));
+      // Sprawdź, czy ten trening istnieje i należy do tego użytkownika
+      // Pobierz wszystkie treningi użytkownika
+      const allWorkouts = await storage.getScheduledWorkouts(userId);
+      const workoutToUpdate = allWorkouts.find(w => w.id === id);
       
-      // If not marking as completed, just return the updated workout
-      if (!isCompleted) {
-        return res.json(updatedWorkout);
+      if (!workoutToUpdate) {
+        return res.status(404).json({ message: 'Scheduled workout not found or not owned by user' });
       }
       
-      // Step 2: Add to completed workouts history
+      console.log(`Updating ONLY workout ID ${id} to isCompleted=${isCompleted}`);
+      
+      // KROK 1: Oznacz TYLKO ten jeden trening jako ukończony
+      const updatedWorkout = await storage.markScheduledWorkoutCompleted(id, Boolean(isCompleted));
+      
+      // Jeśli odznaczamy jako nieukończony, po prostu zwróć zaktualizowany trening
+      if (!isCompleted) {
+        return res.json({
+          updatedWorkout
+        });
+      }
+      
+      // KROK 2: Dodaj do historii ukończonych treningów
       const completedWorkout = await storage.addCompletedWorkout({
         userId,
         workoutId: updatedWorkout.workoutId
       });
       
-      // Step 3: If this is part of a program, update program progress
+      // KROK 3: Jeśli jest to część programu, zaktualizuj postęp programu
       if (updatedWorkout.programId) {
-        // Get the active program for this user
+        // Pobierz aktywny program dla tego użytkownika
         const activeProgram = await storage.getActiveUserProgram(userId);
         
         if (activeProgram && 
@@ -633,13 +646,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           console.log(`Processing workout completion for program day ${updatedWorkout.programDay}, current program day: ${activeProgram.userProgram.currentDay}`);
           
-          // If this workout is for the current day or an earlier day, we can advance the program
+          // Jeśli ten trening jest dla bieżącego dnia lub wcześniejszego dnia, możemy przejść dalej w programie
           if (updatedWorkout.programDay === activeProgram.userProgram.currentDay) {
-            // This is today's workout, advance to the next day
+            // To dzisiejszy trening, przejdź do następnego dnia
             const nextDay = activeProgram.userProgram.currentDay + 1;
             console.log(`Advancing program to day ${nextDay} of ${activeProgram.program.duration}`);
             
-            // If it's the last day, mark the program as completed
+            // Jeśli to ostatni dzień, oznacz program jako ukończony
             if (nextDay > activeProgram.program.duration) {
               console.log(`Program completed! Marking as inactive.`);
               await storage.updateUserProgramProgress(
@@ -650,7 +663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               );
             } else {
-              // Otherwise advance to the next day
+              // W przeciwnym razie przejdź do następnego dnia
               console.log(`Advancing to day ${nextDay}`);
               await storage.updateUserProgramProgress(
                 activeProgram.userProgram.id,
@@ -658,24 +671,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
               );
             }
           } else if (activeProgram.userProgram.currentDay !== null && updatedWorkout.programDay > activeProgram.userProgram.currentDay) {
-            // This is a future workout, user is skipping ahead
-            // Let's update progress to this day since they completed it
+            // To przyszły trening, użytkownik pomija naprzód
+            // Zaktualizujmy postęp do tego dnia, ponieważ go ukończyli
             console.log(`User completed a future workout (day ${updatedWorkout.programDay}), updating current day.`);
             await storage.updateUserProgramProgress(
               activeProgram.userProgram.id,
               { currentDay: updatedWorkout.programDay }
             );
           } else {
-            // This is a previous workout, just log that they completed it
+            // To poprzedni trening, po prostu zalogujmy, że go ukończyli
             console.log(`User completed a previous workout (day ${updatedWorkout.programDay}), no change to current day ${activeProgram.userProgram.currentDay}.`);
           }
           
-          // Log the progress update
+          // Zaloguj aktualizację postępu
           console.log(`Program progress updated for user ${userId}, program ${activeProgram.program.id}`);
         }
       }
       
-      // Return the updated workout with completed workout info
+      // Zwróć zaktualizowany trening wraz z informacjami o ukończonym treningu
       res.json({
         updatedWorkout,
         completedWorkout

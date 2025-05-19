@@ -46,6 +46,7 @@ export interface IStorage {
   unsubscribeFromProgram(userProgramId: number): Promise<UserProgram>;
   
   // Scheduled Workout methods
+  getScheduledWorkoutById(id: number): Promise<ScheduledWorkout | undefined>;
   getScheduledWorkouts(userId: number): Promise<ScheduledWorkout[]>;
   getScheduledWorkoutsByDate(userId: number, date: Date): Promise<ScheduledWorkout[]>;
   getScheduledWorkoutsByDateRange(userId: number, startDate: Date, endDate: Date): Promise<ScheduledWorkout[]>;
@@ -914,6 +915,15 @@ export class DatabaseStorage implements IStorage {
       .from(scheduledWorkouts)
       .where(eq(scheduledWorkouts.userId, userId))
       .orderBy(scheduledWorkouts.scheduledDate);
+  }
+  
+  async getScheduledWorkoutById(id: number): Promise<ScheduledWorkout | undefined> {
+    const [workout] = await db
+      .select()
+      .from(scheduledWorkouts)
+      .where(eq(scheduledWorkouts.id, id));
+    
+    return workout;
   }
   
   async getScheduledWorkoutsByDate(userId: number, date: Date): Promise<ScheduledWorkout[]> {
