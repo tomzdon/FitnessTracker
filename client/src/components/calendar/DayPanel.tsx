@@ -190,8 +190,9 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
       ) : (
         <div className="space-y-4">
           {workoutDetails.map((workout: any) => {
-            // Sprawdź stan ukończenia tego konkretnego treningu używając naszej niezależnej funkcji
-            const isCompleted = WorkoutCompletion.isCompleted(workout.scheduledWorkoutId) || workout.isCompleted;
+            // Sprawdź stan ukończenia tego konkretnego treningu używając naszej niezależnej funkcji z datą
+            const dateString = selectedDate.toISOString().split('T')[0];
+            const isCompleted = WorkoutCompletion.isCompleted(workout.scheduledWorkoutId, dateString) || workout.isCompleted;
             
             return (
               <div 
