@@ -11,19 +11,25 @@ export function ActiveProgramCard() {
   const [_, navigate] = useLocation();
   const { toast } = useToast();
 
-  // Fetch active program z ustawionym stale świeżym cacheTime
+  // Fetch active program z wymuszeniem ponownego pobrania po każdej zmianie
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/active-program"],
     queryFn: async () => {
-      const res = await fetch('/api/active-program');
+      console.log('Pobieranie danych aktywnego programu...');
+      // Dodajemy znacznik czasu, aby uniknąć pamięci podręcznej przeglądarki
+      const timestamp = new Date().getTime();
+      const res = await fetch(`/api/active-program?_t=${timestamp}`);
       if (res.status === 404) return null;
       if (!res.ok) throw new Error('Failed to fetch active program');
-      return res.json();
+      const result = await res.json();
+      console.log('Pobrane dane programu:', result);
+      return result;
     },
-    // Zapewniamy świeże dane po zmianie statusu treningu
+    // Wyłączamy cache i wymuszamy odświeżanie
     refetchOnWindowFocus: true,
-    refetchOnMount: true,
-    staleTime: 0, // Zawsze traktujemy dane jako nieaktualne, wymuszając odświeżenie
+    refetchOnMount: 'always', // Zawsze pobieraj dane przy montowaniu komponentu
+    staleTime: 0,           // Zawsze traktujemy dane jako nieaktualne
+    cacheTime: 0,           // Nie przechowuj danych w pamięci podręcznej
   });
   
   // Mark workout as completed mutation
@@ -218,9 +224,14 @@ export function ActiveProgramCard() {
   
   const { userProgram, program, workouts } = data;
   
-  // When on day 1, progress is 0 since no days are completed yet
-  // Otherwise, progress is based on completed days (currentDay-1 because current day isn't completed yet)
+  // Obliczamy postęp na podstawie liczby ukończonych dni
+  // Jeśli jesteśmy na pierwszym dniu, postęp wynosi 0
+  // W przeciwnym razie obliczamy procent ukończenia na podstawie dni
+  console.log(`Obliczanie postępu programu: dzień ${userProgram.currentDay} z ${program.duration}`);
   const progress = userProgram.currentDay <= 1 ? 0 : ((userProgram.currentDay - 1) / program.duration) * 100;
+  
+  // Logujemy obliczony postęp, aby sprawdzić czy wartości są poprawne
+  console.log(`Obliczony postęp: ${progress.toFixed(2)}%`);
   const currentDayWorkout = workouts.find((w: any) => w.day === userProgram.currentDay);
 
   return (
