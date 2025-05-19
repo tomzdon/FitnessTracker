@@ -108,12 +108,39 @@ export default function ProgramDetail() {
     onSuccess: () => {
       toast({
         title: "Program assigned",
-        description: "The program has been added to your dashboard",
+        description: "The program has been added to your dashboard with scheduled workouts",
       });
+      
+      // Odświeżamy wszystkie powiązane dane, aby kalendarz został zaktualizowany
       queryClient.invalidateQueries({ queryKey: ['/api/user-programs'] });
       queryClient.invalidateQueries({ queryKey: ['/api/active-program'] });
-      // Navigate to home page to show active program
-      navigate("/");
+      
+      // Odświeżamy kalendarz, aby pokazać nowe treningi
+      const today = new Date();
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      
+      const startDate = monthStart.toISOString().split('T')[0];
+      const endDate = monthEnd.toISOString().split('T')[0];
+      
+      // Odświeżamy widok miesiąca
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/scheduled-workouts/range', startDate, endDate] 
+      });
+      
+      // Odświeżamy widok dzisiejszego dnia
+      const todayString = today.toISOString().split('T')[0];
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/scheduled-workouts/date', todayString] 
+      });
+      
+      // Odświeżamy wszystkie zaplanowane treningi
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/scheduled-workouts'] 
+      });
+      
+      // Nawigujemy do kalendarza zamiast strony głównej, aby użytkownik mógł od razu zobaczyć swój harmonogram
+      navigate("/calendar");
     },
     onError: (error: Error) => {
       toast({

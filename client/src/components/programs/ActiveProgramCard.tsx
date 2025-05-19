@@ -11,7 +11,7 @@ export function ActiveProgramCard() {
   const [_, navigate] = useLocation();
   const { toast } = useToast();
 
-  // Fetch active program
+  // Fetch active program z ustawionym stale świeżym cacheTime
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/active-program"],
     queryFn: async () => {
@@ -19,7 +19,11 @@ export function ActiveProgramCard() {
       if (res.status === 404) return null;
       if (!res.ok) throw new Error('Failed to fetch active program');
       return res.json();
-    }
+    },
+    // Zapewniamy świeże dane po zmianie statusu treningu
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    staleTime: 0, // Zawsze traktujemy dane jako nieaktualne, wymuszając odświeżenie
   });
   
   // Mark workout as completed mutation
@@ -64,7 +68,18 @@ export function ActiveProgramCard() {
         title: "Program progress updated",
         description: "You've moved to the next day!",
       });
+      
+      // Bardziej agresywne odświeżanie wszystkich danych programu
       queryClient.invalidateQueries({ queryKey: ["/api/active-program"] });
+      
+      // Wymuszamy pełne odświeżenie strony głównej po zmianie postępu programu
+      queryClient.invalidateQueries({ queryKey: ["/api/user-programs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/statistics"] });
+      
+      // Wywołujemy refetch, aby upewnić się, że dane są aktualne
+      setTimeout(() => {
+        refetch();
+      }, 300);
     },
     onError: (error: Error) => {
       toast({
