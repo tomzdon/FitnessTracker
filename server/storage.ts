@@ -474,11 +474,16 @@ export class MemStorage implements IStorage {
   
   async addCompletedWorkout(insertCompletedWorkout: InsertCompletedWorkout): Promise<CompletedWorkout> {
     const id = this.completedWorkoutIdCounter++;
+    
+    // Create a CompletedWorkout object that includes the scheduledDate
+    // This ensures each workout completion is tracked by its specific instance date
     const completedWorkout: CompletedWorkout = {
       ...insertCompletedWorkout,
       id,
+      scheduledDate: insertCompletedWorkout.scheduledDate || null,
       completedAt: new Date()
     };
+    
     this.completedWorkouts.set(id, completedWorkout);
     return completedWorkout;
   }
