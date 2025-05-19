@@ -612,15 +612,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: 'Scheduled workout not found or not owned by user' });
       }
       
-      // Wykonaj zapytanie SQL, które naprawia brakującą datę
-      await db
-        .update(scheduledWorkouts)
-        .set({ 
-          scheduledDate: req.body.scheduledDate ? new Date(req.body.scheduledDate) : new Date('2025-05-22T12:00:00.000Z') 
-        })
-        .where(eq(scheduledWorkouts.id, id));
+      // Aktualizuj trening za pomocą storage
+      const updatedWorkout = await storage.updateScheduledWorkoutDate(
+        id, 
+        req.body.scheduledDate ? new Date(req.body.scheduledDate) : new Date('2025-05-22T12:00:00.000Z')
+      );
       
-      res.status(200).json({ message: 'Workout fixed successfully' });
+      res.status(200).json({ message: 'Workout fixed successfully', workout: updatedWorkout });
     } catch (error) {
       console.error('Error fixing scheduled workout:', error);
       res.status(500).json({ message: 'Failed to fix scheduled workout' });
