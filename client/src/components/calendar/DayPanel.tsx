@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { WorkoutCompletion } from "@/lib/workout-completion";
+import { useWorkoutTracker } from "@/hooks/use-workout-tracker";
 
 interface DayPanelProps {
   selectedDate: Date;
@@ -12,6 +12,8 @@ interface DayPanelProps {
 
 const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
   const { toast } = useToast();
+  // Używamy nowego hooka do śledzenia niezależnych stanów ukończenia treningu
+  const { isWorkoutCompleted, setWorkoutCompleted } = useWorkoutTracker();
   
   const isToday = () => {
     const today = new Date();
@@ -60,8 +62,8 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
       const dateString = selectedDate.toISOString().split('T')[0];
       
       // Update local workout completion state - for immediate UI feedback
-      // Using composite key of workout ID + date to ensure each workout instance is independent
-      WorkoutCompletion.setCompleted(id, isCompleted, dateString);
+      // Using our new workout tracker hook to ensure each workout instance is tracked independently
+      setWorkoutCompleted(id, dateString, isCompleted);
       
       // Call API only for this specific workout ID
       const res = await apiRequest("PUT", `/api/scheduled-workouts/${id}/complete`, { 
@@ -165,7 +167,7 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
     // Update local state with composite key of ID + date
     // This ensures each workout instance (same workout on different dates) is tracked independently
     const newStatus = !currentStatus;
-    WorkoutCompletion.setCompleted(id, newStatus, dateString);
+    setWorkoutCompleted(id, dateString, newStatus);
     
     // Then update server state for this specific workout instance only
     // The backend will mark this specific scheduled workout instance as completed/not completed

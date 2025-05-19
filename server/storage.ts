@@ -983,6 +983,19 @@ export class DatabaseStorage implements IStorage {
   }
   
   async markScheduledWorkoutCompleted(id: number, isCompleted: boolean): Promise<ScheduledWorkout> {
+    // Najpierw pobieramy informacje o treningu, aby mieć pewność, że istnieje
+    const [existingWorkout] = await db
+      .select()
+      .from(scheduledWorkouts)
+      .where(eq(scheduledWorkouts.id, id));
+      
+    if (!existingWorkout) {
+      throw new Error('Scheduled workout not found');
+    }
+    
+    // Teraz aktualizujemy tylko ten konkretny trening
+    console.log(`Updating scheduled workout with ID ${id} to isCompleted=${isCompleted}`);
+    
     const [updatedWorkout] = await db
       .update(scheduledWorkouts)
       .set({ isCompleted: isCompleted })
@@ -990,7 +1003,7 @@ export class DatabaseStorage implements IStorage {
       .returning();
     
     if (!updatedWorkout) {
-      throw new Error('Scheduled workout not found');
+      throw new Error('Failed to update scheduled workout');
     }
     
     return updatedWorkout;
