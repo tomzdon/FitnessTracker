@@ -656,12 +656,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // STEP 2: Add to completed workouts history 
-      // Dodajemy datę treningu, aby każdy trening był śledzony niezależnie
+      // STEP 2: Add to completed workouts history
+      // Używamy standardowej funkcjonalności bez scheduledDate (ponieważ nie mogliśmy dodać tej kolumny)
       const completedWorkout = await storage.addCompletedWorkout({
         userId,
-        workoutId: updatedWorkout.workoutId,
-        scheduledDate: updatedWorkout.scheduledDate // Dodajemy datę treningu
+        workoutId: updatedWorkout.workoutId
       });
       
       // STEP 3: If this is part of a program, update program progress
