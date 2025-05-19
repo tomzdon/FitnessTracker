@@ -201,8 +201,13 @@ export function ActiveProgramCard() {
     );
   }
   
-  const { userProgram, program, workouts } = data;
-  const progress = (userProgram.currentDay / program.duration) * 100;
+  const { userProgram, program, workouts, completedWorkouts = [] } = data;
+  // Progress is now calculated based on completed workouts instead of current day
+  // If the user is on day 1 and hasn't completed any workouts, progress will be 0
+  const completedWorkoutsCount = completedWorkouts.length;
+  const hasCompletedWorkouts = completedWorkoutsCount > 0;
+  const progress = hasCompletedWorkouts ? 
+    ((userProgram.currentDay - 1) / program.duration) * 100 : 0;
   const currentDayWorkout = workouts.find((w: any) => w.day === userProgram.currentDay);
 
   return (
