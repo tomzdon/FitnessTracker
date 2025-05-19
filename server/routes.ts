@@ -657,10 +657,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // STEP 2: Add to completed workouts history 
-      // We're now using client-side tracking with composite keys for independent instances
+      // Dodajemy datę treningu, aby każdy trening był śledzony niezależnie
       const completedWorkout = await storage.addCompletedWorkout({
         userId,
-        workoutId: updatedWorkout.workoutId
+        workoutId: updatedWorkout.workoutId,
+        scheduledDate: updatedWorkout.scheduledDate // Dodajemy datę treningu
       });
       
       // STEP 3: If this is part of a program, update program progress

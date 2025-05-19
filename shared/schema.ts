@@ -105,12 +105,15 @@ export const completedWorkouts = pgTable("completed_workouts", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id),
   workoutId: integer("workout_id").notNull().references(() => workouts.id),
+  scheduledDate: timestamp("scheduled_date"),  // Data treningu dla rozróżnienia
   completedAt: timestamp("completed_at").defaultNow().notNull(),
 });
 
 export const insertCompletedWorkoutSchema = createInsertSchema(completedWorkouts).omit({
   id: true,
   completedAt: true,
+}).extend({
+  scheduledDate: z.date().optional(),
 });
 
 export type InsertCompletedWorkout = z.infer<typeof insertCompletedWorkoutSchema>;
