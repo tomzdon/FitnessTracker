@@ -47,21 +47,23 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <div className="flex flex-col min-h-screen bg-[#f8f9fa]">
-            {/* Only show header on non-auth pages */}
-            {!isAuthPage && <Header />}
-            
-            <main className="flex-1">
-              <AppRoutes />
-            </main>
-            
-            {/* Only show these components on non-auth pages */}
-            {!isAuthPage && <MobileNavigation />}
-            {!isAuthPage && <BackToTop />}
-          </div>
-          <Toaster />
-        </TooltipProvider>
+        <WorkoutCompletionProvider>
+          <TooltipProvider>
+            <div className="flex flex-col min-h-screen bg-[#f8f9fa]">
+              {/* Only show header on non-auth pages */}
+              {!isAuthPage && <Header />}
+              
+              <main className="flex-1">
+                <AppRoutes />
+              </main>
+              
+              {/* Only show these components on non-auth pages */}
+              {!isAuthPage && <MobileNavigation />}
+              {!isAuthPage && <BackToTop />}
+            </div>
+            <Toaster />
+          </TooltipProvider>
+        </WorkoutCompletionProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
