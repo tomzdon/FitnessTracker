@@ -168,6 +168,7 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
     WorkoutCompletion.setCompleted(id, newStatus, dateString);
     
     // Then update server state for this specific workout instance only
+    // The backend will mark this specific scheduled workout instance as completed/not completed
     markCompletedMutation.mutate({ id, isCompleted: newStatus });
   };
 
@@ -190,9 +191,11 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
       ) : (
         <div className="space-y-4">
           {workoutDetails.map((workout: any) => {
-            // Sprawdź stan ukończenia tego konkretnego treningu używając naszej niezależnej funkcji z datą
+            // Use our new unique ID system to check completion status
             const dateString = selectedDate.toISOString().split('T')[0];
-            const isCompleted = WorkoutCompletion.isCompleted(workout.scheduledWorkoutId, dateString) || workout.isCompleted;
+            // Check both the server-reported status and our local tracking
+            const isCompleted = workout.isCompleted || 
+              WorkoutCompletion.isCompleted(workout.scheduledWorkoutId, dateString);
             
             return (
               <div 

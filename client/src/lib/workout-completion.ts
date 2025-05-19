@@ -4,6 +4,9 @@
  * Ta klasa zapewnia, że każdy trening ma swój własny, niezależny stan ukończenia,
  * co rozwiązuje problem, w którym oznaczenie jednego treningu jako "zrobiony"
  * wpływa na inne treningi.
+ * 
+ * Wersja 2.0 - teraz używa unikalnych kluczy dla każdej instancji treningu z danego dnia,
+ * zapewniając że ten sam trening zaplanowany na różne dni jest śledzony niezależnie.
  */
 
 // Klucz lokalnego magazynu dla przechowywania stanów ukończenia
