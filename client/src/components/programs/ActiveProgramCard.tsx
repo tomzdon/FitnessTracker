@@ -11,28 +11,21 @@ export function ActiveProgramCard() {
   const [_, navigate] = useLocation();
   const { toast } = useToast();
 
-  // Fetch active program z wymuszeniem ponownego pobrania po każdej zmianie
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/active-program"],
     queryFn: async () => {
-      console.log('Pobieranie danych aktywnego programu...');
-      // Dodajemy znacznik czasu, aby uniknąć pamięci podręcznej przeglądarki
       const timestamp = new Date().getTime();
       const res = await fetch(`/api/active-program?_t=${timestamp}`);
       if (res.status === 404) return null;
       if (!res.ok) throw new Error('Failed to fetch active program');
-      const result = await res.json();
-      console.log('Pobrane dane programu:', result);
-      return result;
+      return res.json();
     },
-    // Wyłączamy cache i wymuszamy odświeżanie
     refetchOnWindowFocus: true,
-    refetchOnMount: 'always', // Zawsze pobieraj dane przy montowaniu komponentu
-    staleTime: 0,           // Zawsze traktujemy dane jako nieaktualne
-    cacheTime: 0,           // Nie przechowuj danych w pamięci podręcznej
+    refetchOnMount: 'always',
+    staleTime: 0,
+    gcTime: 0,
   });
   
-  // Mark workout as completed mutation
   const completeWorkoutMutation = useMutation({
     mutationFn: async (workoutId: number) => {
       const res = await apiRequest("POST", "/api/completedWorkouts", { workoutId });
@@ -54,7 +47,6 @@ export function ActiveProgramCard() {
     },
   });
   
-  // Update program progress mutation
   const updateProgramMutation = useMutation({
     mutationFn: async ({ id, currentDay, isActive, completedAt }: { 
       id: number, 
@@ -96,7 +88,6 @@ export function ActiveProgramCard() {
     },
   });
   
-  // Unsubscribe from program mutation
   const unsubscribeMutation = useMutation({
     mutationFn: async (userProgramId: number) => {
       const res = await apiRequest("POST", `/api/user-programs/${userProgramId}/unsubscribe`);
@@ -224,14 +215,7 @@ export function ActiveProgramCard() {
   
   const { userProgram, program, workouts } = data;
   
-  // Obliczamy postęp na podstawie liczby ukończonych dni
-  // Jeśli jesteśmy na pierwszym dniu, postęp wynosi 0
-  // W przeciwnym razie obliczamy procent ukończenia na podstawie dni
-  console.log(`Obliczanie postępu programu: dzień ${userProgram.currentDay} z ${program.duration}`);
   const progress = userProgram.currentDay <= 1 ? 0 : ((userProgram.currentDay - 1) / program.duration) * 100;
-  
-  // Logujemy obliczony postęp, aby sprawdzić czy wartości są poprawne
-  console.log(`Obliczony postęp: ${progress.toFixed(2)}%`);
   const currentDayWorkout = workouts.find((w: any) => w.day === userProgram.currentDay);
 
   return (
