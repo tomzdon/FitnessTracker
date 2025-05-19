@@ -148,7 +148,14 @@ const DayPanel = ({ selectedDate, workouts = [] }: DayPanelProps) => {
       
       // Update statistics and program progress without affecting other workouts
       queryClient.invalidateQueries({ queryKey: ['/api/statistics'] });
+      
+      // Bardziej agresywne odświeżanie danych aktywnego programu
       queryClient.invalidateQueries({ queryKey: ['/api/active-program'] });
+      
+      // Odświeżamy również wszystkie powiązane zapytania programowe
+      queryClient.invalidateQueries({ queryKey: ['/api/user-programs'] });
+      
+      // Odświeżamy historię ukończonych treningów
       queryClient.invalidateQueries({ queryKey: ['/api/completedWorkouts'] });
     },
     onError: (error: Error) => {
